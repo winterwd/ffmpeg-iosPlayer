@@ -10,9 +10,11 @@
 #include "ffmpegDecoder.h"
 #import "AudioPlayer.h"
 #include "pthreadTest.h"
+#import "FXPlayerView.h"
 @interface ViewController ()
 {
     AudioPlayer *player;
+    FXPlayerView *playerView;
 }
 
 @end
@@ -27,6 +29,8 @@
     printf("111\n");
 //    [self testThread];
     [self testAudioQueuePlay];
+//    playerView = [[FXPlayerView alloc]initWithFrame:CGRectMake(0, 200, 320, 480)];
+//    [self.view addSubview:playerView];
 //    [self testFFmpeg];
     
 

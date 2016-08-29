@@ -35,10 +35,17 @@ typedef struct {
     SwrContext *swr;
     int    audio_buffer_size;
     uint8_t *audioOutBuffer;
-    
     int    samplerate;
     int    nb_channel;
     
+    //video
+    struct SwsContext *sws;
+    int    video_buffer_size;
+    uint8_t *videoOutBuffer;
+    int    width;
+    int    height;
+    
+
     //control
     int    stop;
     
@@ -46,6 +53,7 @@ typedef struct {
 //    pthread_cond_t  decodeAudioSize_cond;
     
     ffmpegPacketQueue audioPakcetQueue;
+    ffmpegPacketQueue videoPacketQueue;
     
 }ffmpegDecoder;
 
