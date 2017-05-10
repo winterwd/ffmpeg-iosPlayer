@@ -32,8 +32,8 @@ int packet_queue_put(ffmpegPacketQueue *q, AVPacket *pkt)
     
     pthread_mutex_lock(&q->mute_lock);
     
-    while (q->nb_packets>10) {
-        printf("queue has 10 items , wait..   \n");
+    while (q->nb_packets>50) {
+        printf("queue has 50 items , wait..   \n");
         pthread_cond_wait(&q->cond_lock, &q->mute_lock);
         
         
@@ -77,7 +77,7 @@ int packet_queue_get(ffmpegPacketQueue *q, AVPacket *pkt)
     *pkt = pkt1->pkt;
     av_free(pkt1);
     
-    if (q->nb_packets==5) {
+    if (q->nb_packets==15) {
         pthread_cond_signal(&q->cond_lock);
         printf("queue has 5 items , start read...   \n");
     }

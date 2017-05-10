@@ -8,13 +8,11 @@
 
 #import "ViewController.h"
 #include "ffmpegDecoder.h"
-#import "AudioPlayer.h"
 #include "pthreadTest.h"
-#import "FXPlayerView.h"
+#import "ffmpegPlayer.h"
 @interface ViewController ()
 {
-    AudioPlayer *player;
-    FXPlayerView *playerView;
+    ffmpegPlayer *player;
 }
 
 @end
@@ -28,7 +26,7 @@
     
     printf("111\n");
 //    [self testThread];
-    [self testAudioQueuePlay];
+    [self testFFmpeg];
 //    playerView = [[FXPlayerView alloc]initWithFrame:CGRectMake(0, 200, 320, 480)];
 //    [self.view addSubview:playerView];
 //    [self testFFmpeg];
@@ -53,31 +51,47 @@
 
 static FILE *outFile;
 
+/*
 static inline int decodeAudioCallBack(uint8_t *outbuf,int bufsize)
 {
     
     fwrite(outbuf, 1, bufsize, outFile);
     return 1;
 }
-
+*/
 
 - (void)testAudioQueuePlay
 {
-      player = [[AudioPlayer alloc]initWithAudio:@"/Users/xiaowoniu/Documents/一些素材/test.flv"];
+      
 }
 
 
 - (void)testFFmpeg
 {
     
-    NSString *infileName = @"/Users/xiaowoniu/Documents/一些素材/test.flv";
-    NSString *outFileName = @"/Users/xiaowoniu/Documents/一些素材/test.pcm";
+//    NSString *infileName = @"/Users/xiaowoniu/Documents/一些素材/test.flv";
+    ///Users/xiaowoniu/Downloads/13.mp4
+    NSString *infileName = @"/Users/smart/Documents/temp/test.flv";
+    NSString *outFileName = @"/Users/smart/Documents/temp/test.pcm";
     
-    ffmpegDecoder *decoder = ffmpeg_decoder_alloc_init();
-    decoder->decoded_audio_data_callback = decodeAudioCallBack;
-    ffmpeg_decoder_decode_file(decoder,[infileName UTF8String]);
-    outFile = fopen([outFileName UTF8String], "wb+");
-    ffmpeg_decoder_start(decoder);
+//    ffmpegDecoder *decoder = ffmpeg_decoder_alloc_init();
+//    decoder->decoded_audio_data_callback = decodeAudioCallBack;
+//    ffmpeg_decoder_decode_file(decoder,[infileName UTF8String]);
+//    outFile = fopen([outFileName UTF8String], "wb+");
+//    ffmpeg_decoder_start(decoder);
+    
+    player = [[ffmpegPlayer alloc]init];
+    [player openFile:infileName];
+    __weak ffmpegPlayer *weakPlayer = player;
+    __weak ViewController *weakSelf = self;
+    [player setPlayStateCallBack:^(FFmpegPlayerStatus status) {
+       
+        if (status == kffmpegPrepareToPlay) {
+            [weakSelf.view addSubview:[weakPlayer playerView]];
+            [weakPlayer play];
+        }
+        
+    }];
     
     
 }

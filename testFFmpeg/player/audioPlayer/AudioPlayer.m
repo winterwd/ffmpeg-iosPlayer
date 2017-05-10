@@ -41,61 +41,66 @@ static void BufferCallback(void *inUserData,AudioQueueRef inAQ,
 
 //缓存数据读取方法的实现
 -(void) audioQueueOutputWithQueue:(AudioQueueRef)audioQueue queueBuffer:(AudioQueueBufferRef)audioQueueBuffer{
-    OSStatus status;
     
     
-    int outsize = 0;
-    uint8_t *temp;
-    ffmpeg_decode_frame(playerDecoder, &temp, &outsize);
+    
+    if (self.delegate && [self.delegate respondsToSelector:@selector(audioQueueOutputWithQueue:queueBuffer:)]) {
+        [self.delegate audioQueueOutputWithQueue:audioQueue queueBuffer:audioQueueBuffer];
+    }
 
-    memcpy(audioQueueBuffer->mAudioData, playerDecoder->audioOutBuffer, outsize);
-    
-    printf("out size is %d  \n",outsize);
-    
-//    fread(audioQueueBuffer->mAudioData, 1, 4096, infile);
-    audioQueueBuffer->mAudioDataByteSize = outsize;
-    status = AudioQueueEnqueueBuffer(audioQueue, audioQueueBuffer, 0, NULL);
     
 }
 
 
-
--(id) initWithAudio:(NSString *)path{
+- (id)initWithAudioSamplate:(int )samplerate
+                 numChannel:(int )channel
+                     format:(AudioFormatFlags)format
+              isInterleaved:(BOOL)isInterleaved
+{
     if (!(self=[super init])) return nil;
-
+    
     //打开音频文件
-
-//    infile = fopen([path UTF8String], "rb+");
     
-    playerDecoder = ffmpeg_decoder_alloc_init();
+    //    infile = fopen([path UTF8String], "rb+");
     
-    ffmpeg_decoder_decode_file(playerDecoder, [path UTF8String]);
-
-    
-    ffmpeg_decoder_start(playerDecoder);
+//    playerDecoder = ffmpeg_decoder_alloc_init();
+//    
+//    ffmpeg_decoder_decode_file(playerDecoder, [path UTF8String]);
+//    
+//    
+//    ffmpeg_decoder_start(playerDecoder);
     //取得音频数据格式
     
- 
-    [self setAudioDataFormatWithSmapleRate:playerDecoder->samplerate numChannel:playerDecoder->nb_channel format:kAudioFormatFlagIsSignedInteger isInterleaved:YES];
     
-
+    [self setAudioDataFormatWithSmapleRate:samplerate numChannel:channel format:format isInterleaved:isInterleaved];
+    
+    printf("setup audio fromat samplerate : %d  chnnel: %d  \n ",samplerate,channel);
     //创建播放用的音频队列
-
-
+    
+    
     CheckError(AudioQueueNewOutput(&dataFormat, BufferCallback, (__bridge void * _Nullable)(self),
                                    nil, nil, 0, &queue), "AudioQueueNewOutput error");
-    //创建并分配缓冲空间
-    packetIndex=0;
-    for (int i=0; i<NUM_BUFFERS; i++) {
-        AudioQueueAllocateBuffer(queue, gBufferSizeBytes, &buffers[i]);
-        BufferCallback((__bridge void *)(self), queue, buffers[i]);
-    }
-    
+    [self audioPrepare];
+
     Float32 gain=1.0;
     //设置音量
     AudioQueueSetParameter(queue, kAudioQueueParam_Volume, gain);
     
     return self;
+}
+
+- (void)audioPrepare
+{
+    //创建并分配缓冲空间
+    packetIndex=0;
+    for (int i=0; i<NUM_BUFFERS; i++) {
+        AudioQueueAllocateBuffer(queue, gBufferSizeBytes, &buffers[i]);
+        memset(buffers[i]->mAudioData, 0, 8192);
+        buffers[i]->mAudioDataByteSize = 8192;
+        AudioQueueEnqueueBuffer(queue, buffers[i], 0, NULL);
+        
+    }
+    
 }
 
 - (void)setAudioDataFormatWithSmapleRate:(double)samplerate

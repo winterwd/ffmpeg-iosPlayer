@@ -233,21 +233,21 @@ void* ffmpeg_videooutput_init()
     }
     [s_renderLock lock];
     render = NULL;
-    render = (videoRender *)malloc(sizeof(videoRender));
+    render = (videoRender *)malloc(sizeof(videoRender)); 
     memset(render, 0, sizeof(videoRender));
     render->isCanVideoPlay = true;
     render->caculateVertices = true;
     render->glRenderFinished = true;
     [s_renderLock unlock];
     
-    printf("video:  _kplayer_videooutput_init called! \n");
+    printf("video:  player_videooutput_init called! \n");
     
     return render;
 }
 
 void ffmpeg_videooutput_setarea( void* extend_handle, int x, int y, int width, int height )
 {
-    printf("video:  _kplayer_videooutput_setarea called! \n");
+    printf("video:  player_videooutput_setarea called! \n");
 }
 
 
@@ -255,7 +255,7 @@ void ffmpeg_videooutput_setarea( void* extend_handle, int x, int y, int width, i
 void ffmpeg_videooutput_render(AVFrame *frame)
 {
     [s_renderLock lock];
-//    printf("video:  _kplayer_videooutput_render called! \n");
+   
     if (render== NULL) {
         [s_renderLock unlock];
         return;
@@ -330,6 +330,8 @@ void ffmpeg_videooutput_render(AVFrame *frame)
     [_context presentRenderbuffer:GL_RENDERBUFFER];
     render->glRenderFinished = YES;
     [s_renderLock unlock];
+    
+     printf("video:  player_videooutput_render called! \n");
 
 }
 

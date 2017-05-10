@@ -8,8 +8,11 @@
 
 #import <Foundation/Foundation.h>
 #import <AudioToolbox/AudioQueue.h>
-#include "ffmpegDecoder.h"
 #define NUM_BUFFERS 3
+
+@protocol AudioPlayerDelegate ;
+
+
 @interface AudioPlayer : NSObject
 {
 
@@ -25,7 +28,7 @@
     
     FILE        *infile;
     
-    ffmpegDecoder  *playerDecoder;
+
     
     
     
@@ -34,10 +37,23 @@
 
 //定义队列为实例属性
 @property AudioQueueRef queue;
+@property (nonatomic,assign) id<AudioPlayerDelegate> delegate;
 //播放方法定义
--(id)initWithAudio:(NSString *) path;
+- (id)initWithAudioSamplate:(int )samplerate
+                 numChannel:(int )channel
+                     format:(AudioFormatFlags)format
+              isInterleaved:(BOOL)isInterleaved;
+- (void)audioPrepare;
+
 - (void)play;
 - (void)pause;
 - (void)stop;
+
+@end
+
+
+@protocol AudioPlayerDelegate <NSObject>
+
+-(void)audioQueueOutputWithQueue:(AudioQueueRef)audioQueue queueBuffer:(AudioQueueBufferRef)audioQueueBuffer;
 
 @end

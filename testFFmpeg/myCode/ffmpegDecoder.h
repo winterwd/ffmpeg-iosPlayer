@@ -45,12 +45,12 @@ typedef struct {
     int    width;
     int    height;
     
+    AVFrame *pFrameRGB;
+    AVFrame *pVideoFrame;
 
     //control
     int    stop;
     
-//    pthread_mutex_t decodeAudioSize_mute;
-//    pthread_cond_t  decodeAudioSize_cond;
     
     ffmpegPacketQueue audioPakcetQueue;
     ffmpegPacketQueue videoPacketQueue;
@@ -61,8 +61,8 @@ ffmpegDecoder *ffmpeg_decoder_alloc_init();
 int           ffmpeg_decoder_decode_file(ffmpegDecoder *decoder,const char *path);
 int           ffmpeg_decoder_start(ffmpegDecoder *decoder);
 int           ffmpeg_decoder_stop(ffmpegDecoder *decoder);
-int   ffmpeg_decode_frame(ffmpegDecoder *decoder, uint8_t **outPcmData,int *outDatasize);
-
+int           ffmpeg_decode_audio_frame(ffmpegDecoder *decoder, uint8_t **outPcmData,int *outDatasize);
+int           ffmpeg_decode_video_frame(ffmpegDecoder *decoder,AVFrame *outVideoFrame);
 
 
 #endif /* ffmpegDecoder_h */

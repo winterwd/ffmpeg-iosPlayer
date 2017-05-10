@@ -16,7 +16,8 @@ static inline void checkError(int ret,int success){
     }
 }
 
-int ffmpeg_decoder_audioProcess(ffmpegDecoder *decoder);
+int ffmpeg_read_packet_Process(ffmpegDecoder *decoder);
+
 ffmpegDecoder *ffmpeg_decoder_alloc_init()
 {
     ffmpegDecoder *instance = (ffmpegDecoder *)malloc(sizeof(ffmpegDecoder));
@@ -118,38 +119,50 @@ int ffmpeg_decoder_decode_file(ffmpegDecoder *decoder,const char *path)
     decoder->width = decoder->pVcodectx->width;
     decoder->height = decoder->pVcodectx->height;
     
-    decoder->sws = sws_getContext(decoder->width, decoder->height, decoder->pVcodectx->pix_fmt, decoder->width, decoder->height, PIX_FMT_YUV420P, SWS_BILINEAR, NULL, NULL, NULL);
+    
+//    numBytes=avpicture_get_size(PIX_FMT_RGB24, pCodecCtx->width,
+//                                pCodecCtx->height);
+//    buffer=(uint8_t *)av_malloc(numBytes*sizeof(uint8_t));
+//    
+//    // Assign appropriate parts of buffer to image planes in pFrameRGB
+//    // Note that pFrameRGB is an AVFrame, but AVFrame is a superset
+//    // of AVPicture
+    
+
     
     decoder->video_buffer_size = avpicture_get_size(PIX_FMT_YUV420P, decoder->width, decoder->height);
     decoder->videoOutBuffer = (uint8_t *)av_malloc(decoder->video_buffer_size*(sizeof(uint8_t)));
     
+    decoder->pFrameRGB =av_frame_alloc();
+    decoder->pFrameRGB->width = decoder->width;
+    decoder->pFrameRGB->height = decoder->height;
+    avpicture_fill((AVPicture *)decoder->pFrameRGB, decoder->videoOutBuffer, PIX_FMT_YUV420P,
+                   decoder->width, decoder->height);
+
     
+    decoder->pVideoFrame = av_frame_alloc();
+    
+    decoder->sws = sws_getContext(decoder->width, decoder->height, decoder->pVcodectx->pix_fmt, decoder->width, decoder->height, PIX_FMT_YUV420P, SWS_BILINEAR, NULL, NULL, NULL);
 
     
     return 1;
 }
 
 
-void *thread(void *argc) {
+void *read_packet_thread(void *argc) {
     
-    
-    printf("read thread is starting ...\n");
     ffmpegDecoder *decoder = (ffmpegDecoder *)argc;
     
-    ffmpeg_decoder_audioProcess(decoder);
+    ffmpeg_read_packet_Process(decoder);
     return NULL;
 }
 
 void *thread1(void *argc) {
     
-    printf("decode thread is starting ...\n");
+    printf("decode video thread is starting ...\n");
     ffmpegDecoder *decoder = (ffmpegDecoder *)argc;
-    int size = 0 ;
-    ffmpeg_decode_frame(decoder,NULL,&size);
-    
-    
-    
-    
+    ffmpeg_decode_video_frame(decoder, NULL);
+    printf("decode video thread is ending ...\n");
     return NULL;
 }
 
@@ -158,12 +171,12 @@ int ffmpeg_decoder_start(ffmpegDecoder *decoder)
 {
     
     
-    pthread_t decode_thread;
-    pthread_create(&decode_thread, NULL, thread, (void *)decoder);
+    pthread_t read_thread;
+    pthread_create(&read_thread, NULL, read_packet_thread, (void *)decoder);
     
     
-    //    pthread_t decode_thread1;
-    //    pthread_create(&decode_thread1, NULL, thread1, (void *)decoder);
+//    pthread_t decode_thread1;
+//    pthread_create(&decode_thread1, NULL, thread1, (void *)decoder);
     
     printf("\n ffmpeg done! \n");
     
@@ -175,20 +188,22 @@ int ffmpeg_decoder_start(ffmpegDecoder *decoder)
 
 
 
-int ffmpeg_decoder_audioProcess(ffmpegDecoder *decoder)
+int ffmpeg_read_packet_Process(ffmpegDecoder *decoder)
 {
     
-    printf("\n ffmpeg audio decode thread is processing ! \n");
+    printf("\n ffmpeg audio decode thread is starting ! \n");
     
-    AVPacket *packet = malloc(sizeof(AVPacket));
-    av_init_packet(packet);
-    while (av_read_frame(decoder->pFormatCtx, packet)>=0) {
+//    AVPacket *packet = malloc(sizeof(AVPacket));
+//    av_init_packet(packet);
+    
+    AVPacket packet;
+    while (av_read_frame(decoder->pFormatCtx, &packet)>=0) {
         
-        if (packet->stream_index == decoder->auidoStreamIndex) {
+        if (packet.stream_index == decoder->auidoStreamIndex) {
             
             
             
-            packet_queue_put(&decoder->audioPakcetQueue, packet);
+            packet_queue_put(&decoder->audioPakcetQueue, &packet);
             
             printf("audio packets in queue: %d \n",decoder->audioPakcetQueue.nb_packets);
             
@@ -213,59 +228,97 @@ int ffmpeg_decoder_audioProcess(ffmpegDecoder *decoder)
              }
              */
 //            ffmpeg_decode_frame(decoder,NULL,&size);
-        }else if (packet->stream_index == decoder->videoStreamIndex){
-//            packet_queue_put(&decoder->videoPacketQueue, packet);
-//            printf("vidoe packets in queue: %d \n",decoder->audioPakcetQueue.nb_packets);
+        }else if (packet.stream_index == decoder->videoStreamIndex){
+            packet_queue_put(&decoder->videoPacketQueue, &packet);
+            printf("vidoe packets in queue: %d \n",decoder->audioPakcetQueue.nb_packets);
+        }else {
+            usleep(100000);
         }
-//        av_free_packet(packet);
-        
-        
-        
-        
+  
     }
     
-    int size = 0;
-    
-//    ffmpeg_decode_frame(decoder,NULL,&size);
-//    swr_free(&decoder->swr);
-//    decoder->decoded_audio_data_callback = NULL;
-    
-    
 
+    
+    
+    printf("\n ffmpeg audio decode thread is ending ! \n");
     
     return 1;
 }
 
 
+void SaveFrame(AVFrame *pFrame, int width, int height, int iFrame) {
+    FILE *pFile;
+    char szFilename[64];
+    int  y;
+    
+    // Open file
+    sprintf(szFilename, "/Users/xiaowoniu/Documents/一些素材/testFrame/frame%d.ppm", iFrame);
+    pFile=fopen(szFilename, "wb");
+    if(pFile==NULL)
+        return;
+    
+    // Write header
+    fprintf(pFile, "P6\n%d %d\n255\n", width, height);
+    
+    // Write pixel data
+    for(y=0; y<height; y++)
+        fwrite(pFrame->data[0]+y*pFrame->linesize[0], 1, width*3, pFile);
+    
+    // Close file
+    fclose(pFile);
+}
 
-int ffmpeg_decode_videoFrame(ffmpegDecoder *decoder,AVFrame *outVideoFrame)
+
+
+static int zx = 0;
+
+int ffmpeg_decode_video_frame(ffmpegDecoder *decoder,AVFrame *outVideoFrame)
 {
     AVPacket packet;
     av_init_packet(&packet);
     int gotVideoFrame = 0;
-    AVFrame *videoFrame = av_frame_alloc();
+    
+    
+
+
+   
     
 
     int ret = packet_queue_get(&decoder->videoPacketQueue,&packet);
-    
-    
     if (ret == 0) {
         printf("\n queue is empty! \n");
+        return  0;
     }else{
-        avcodec_decode_video2(decoder->pVcodectx, videoFrame, &gotVideoFrame, &packet);
         
-        if (gotVideoFrame) {
-            sws_scale(decoder->sws, ( uint8_t const* const * )videoFrame->data, videoFrame->linesize, 0, decoder->height, outVideoFrame->data, outVideoFrame->linesize);
-            outVideoFrame->width = decoder->width;
-            outVideoFrame->height = decoder->height;
+//            AVFrame *videoFrame = av_frame_alloc();
+        ret = avcodec_decode_video2(decoder->pVcodectx, decoder->pVideoFrame, &gotVideoFrame, &packet);
+        
+        if (ret < 0) {
+            printf("\n function avcodec_decode_video2() error! \n");
+        }
+        if (gotVideoFrame && ret) {
+            zx++;
+            sws_scale(decoder->sws, ( uint8_t const* const * )decoder->pVideoFrame->data, decoder->pVideoFrame->linesize, 0, decoder->height, decoder->pFrameRGB->data, decoder->pFrameRGB->linesize);
+//                outVideoFrame->width = decoder->width;
+//                outVideoFrame->height = decoder->height;
+            
+            printf("\n decoder video success! \n");
+//            if (zx%5 == 0) {
+//                SaveFrame(decoder->pFrameRGB, decoder->width, decoder->height, zx);
+//            }
         }
     }
+        
+//        usleep(20000);
+
     
-    av_freep(videoFrame);
+    av_free_packet(&packet);
+    
+   
     return 1;
 }
 
-int   ffmpeg_decode_frame(ffmpegDecoder *decoder, uint8_t **outPcmData,int *outDatasize)
+int   ffmpeg_decode_audio_frame(ffmpegDecoder *decoder, uint8_t **outPcmData,int *outDatasize)
 {
     
     
@@ -283,6 +336,7 @@ int   ffmpeg_decode_frame(ffmpegDecoder *decoder, uint8_t **outPcmData,int *outD
         if (ret == 0) {
             printf("\n queue is empty! \n");
 //            usleep(2000);
+    
             
             
         }else{
@@ -299,18 +353,20 @@ int   ffmpeg_decode_frame(ffmpegDecoder *decoder, uint8_t **outPcmData,int *outD
             }else{
                 printf("\n decoder audio error! \n");
                 
+                ret = 0;
+                
                 
             }
 //            usleep(600);
         }
         
-        
+
     av_free(audioFrame);
 
   
 
     
-    return 1;
+    return ret;
 }
 
 int  ffmpeg_decoder_stop(ffmpegDecoder *decoder)
