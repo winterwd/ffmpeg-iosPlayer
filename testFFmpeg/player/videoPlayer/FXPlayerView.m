@@ -240,7 +240,7 @@ void* ffmpeg_videooutput_init()
     render->glRenderFinished = true;
     [s_renderLock unlock];
     
-    printf("video:  player_videooutput_init called! \n");
+//    printf("video:  player_videooutput_init called! \n");
     
     return render;
 }
@@ -254,14 +254,14 @@ void ffmpeg_videooutput_setarea( void* extend_handle, int x, int y, int width, i
 
 void ffmpeg_videooutput_render(AVFrame *frame)
 {
-    [s_renderLock lock];
+//    [s_renderLock lock];
    
     if (render== NULL) {
-        [s_renderLock unlock];
+//        [s_renderLock unlock];
         return;
     }
     if(!render->isCanVideoPlay || NULL == frame) {
-        [s_renderLock unlock];
+//        [s_renderLock unlock];
         return;
     }
     render->glRenderFinished = NO;
@@ -329,9 +329,9 @@ void ffmpeg_videooutput_render(AVFrame *frame)
     glBindRenderbuffer(GL_RENDERBUFFER, _renderbuffer);
     [_context presentRenderbuffer:GL_RENDERBUFFER];
     render->glRenderFinished = YES;
-    [s_renderLock unlock];
+//    [s_renderLock unlock];
     
-     printf("video:  player_videooutput_render called! \n");
+//     printf("video:  player_videooutput_render called! \n");
 
 }
 

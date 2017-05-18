@@ -30,27 +30,38 @@ extern void ffmpeg_videooutput_render(AVFrame *frame);
 }
 
 
+
+int handleVideoCallback(AVFrame *frame,int data){
+    ffmpeg_videooutput_render(frame);
+    return 1;
+}
+
 -(void)openFile:(NSString *)path
 {
     dispatch_async(dispatch_get_global_queue(0, 0), ^{
-        int ret =  ffmpeg_decoder_decode_file(playerDecoder, [path UTF8String]);
         
-        if (ret>0) {
-            audioPlayer = [[AudioPlayer alloc]initWithAudioSamplate:playerDecoder->samplerate numChannel:playerDecoder->nb_channel format:kAudioFormatFlagIsSignedInteger isInterleaved:YES];
-            audioPlayer.delegate = self;
 
-        }
+        ffmpeg_decoder_open_file(playerDecoder, [path UTF8String]);
+        playerDecoder->decoded_video_data_callback = handleVideoCallback;
+        audioPlayer = [[AudioPlayer alloc]initWithAudioSamplate:playerDecoder->samplerate numChannel:playerDecoder->nb_channel format:kAudioFormatFlagIsSignedInteger isInterleaved:YES];
+        audioPlayer.delegate = self;
+        
+
+        ffmpeg_videooutput_init();
+        CGFloat rate = playerDecoder->width/playerDecoder->height;
+        CGFloat height = 320/rate;
         dispatch_async(dispatch_get_main_queue(), ^{
-            ffmpeg_videooutput_init();
-            CGFloat rate = playerDecoder->width/playerDecoder->height;
-            CGFloat height = 320/rate;
             playView = [[FXPlayerView alloc]initWithFrame:CGRectMake(0, 200, 320, height)];
             if (self.playStateCallBack) {
                 
                 self.playStateCallBack(kffmpegPrepareToPlay);
             }
+
         });
+
     });
+    
+
     
 }
 
@@ -60,29 +71,28 @@ extern void ffmpeg_videooutput_render(AVFrame *frame);
 {
     OSStatus status;
     int outsize = 0;
-//    uint8_t *temp;
-    ffmpeg_decode_audio_frame(playerDecoder, NULL, &outsize);
-
-    memcpy(audioQueueBuffer->mAudioData, playerDecoder->audioOutBuffer, outsize);
     
-    printf("out size is %d  \n",outsize);
+    static uint8_t audioBuffer[1024*16];
     
+    ffmpeg_decode_audio_frame(playerDecoder, audioBuffer, &outsize);
+    memcpy(audioQueueBuffer->mAudioData, audioBuffer, outsize);
+//    free(*pcmData);
+//    printf("out size is %d  \n",outsize);
     
     audioQueueBuffer->mAudioDataByteSize = outsize;
     status = AudioQueueEnqueueBuffer(audioQueue, audioQueueBuffer, 0, NULL);
+    
 
-    /*
-    int ret = ffmpeg_decode_video_frame(playerDecoder, NULL);
-    if (ret ==1 ) {
-        ffmpeg_videooutput_render(playerDecoder->pFrameRGB);
-        
-    }
-     */
+//    AVFrame *rgbFrame = quque_picture_get_frame(playerDecoder);
+//    if (rgbFrame) {
+//        ffmpeg_videooutput_render(rgbFrame);
+//    }
+
 }
 
 - (void)play
 {
-    ffmpeg_decoder_start(playerDecoder);
+    ffmpeg_decoder_star(playerDecoder);
     [audioPlayer play];
 
 }

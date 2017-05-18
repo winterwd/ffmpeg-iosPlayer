@@ -71,7 +71,9 @@ static inline int decodeAudioCallBack(uint8_t *outbuf,int bufsize)
     
 //    NSString *infileName = @"/Users/xiaowoniu/Documents/一些素材/test.flv";
     ///Users/xiaowoniu/Downloads/13.mp4
-    NSString *infileName = @"/Users/smart/Documents/temp/test.flv";
+    ///Users/smart/Desktop/未命名文件夹/output.mp4
+//    NSString *infileName = @"/Users/smart/Documents/temp/test.flv";
+    NSString *infileName = @"/Users/smart/Desktop/未命名文件夹/output.mp4";
     NSString *outFileName = @"/Users/smart/Documents/temp/test.pcm";
     
 //    ffmpegDecoder *decoder = ffmpeg_decoder_alloc_init();

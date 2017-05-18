@@ -18,6 +18,7 @@
 #include "ffmpegPacketQueue.h"
 
 
+#define VIDEO_QUEUE_SIZE 1
 
 typedef struct {
     AVFormatContext *pFormatCtx;
@@ -25,16 +26,23 @@ typedef struct {
     AVCodec         *pAcodec;
     AVCodecContext  *pVcodectx;
     AVCodecContext  *pAcodectx;
+    AVStream        *pvideo_st;
+    AVStream        *paudio_st;
     unsigned   short videoStreamIndex;
     unsigned   short auidoStreamIndex;
     int (*decoded_audio_data_callback)(uint8_t *pcmData,int dataSize);
-    int (*decoded_video_data_callback)(uint8_t *yuvData,int dataSize);
+    int (*decoded_video_data_callback)(AVFrame *yuvData,int dataSize);
     
+    pthread_t       decodeThread;
+    pthread_t       videoThread;
+    
+    pthread_mutex_t pic_mutex;
+    pthread_cond_t  pic_cond;
     
     //audio
     SwrContext *swr;
     int    audio_buffer_size;
-    uint8_t *audioOutBuffer;
+    uint8_t *audio_buffer;
     int    samplerate;
     int    nb_channel;
     
@@ -45,11 +53,24 @@ typedef struct {
     int    width;
     int    height;
     
+    AVFrame *vFrameQueue[VIDEO_QUEUE_SIZE];
+    int    vframe_queue_size;
+    int    vframe_queue_windex;
+    int    vframe_queue_rindex;
+    
+    double video_clock;
+    
+    double audio_clock;
+    
+    
     AVFrame *pFrameRGB;
     AVFrame *pVideoFrame;
 
     //control
     int    stop;
+    short   quit;
+    
+    char   fileName[1024];
     
     
     ffmpegPacketQueue audioPakcetQueue;
@@ -57,12 +78,15 @@ typedef struct {
     
 }ffmpegDecoder;
 
-ffmpegDecoder *ffmpeg_decoder_alloc_init();
-int           ffmpeg_decoder_decode_file(ffmpegDecoder *decoder,const char *path);
-int           ffmpeg_decoder_start(ffmpegDecoder *decoder);
-int           ffmpeg_decoder_stop(ffmpegDecoder *decoder);
-int           ffmpeg_decode_audio_frame(ffmpegDecoder *decoder, uint8_t **outPcmData,int *outDatasize);
-int           ffmpeg_decode_video_frame(ffmpegDecoder *decoder,AVFrame *outVideoFrame);
+ffmpegDecoder   *ffmpeg_decoder_alloc_init();
+int             ffmpeg_decoder_open_file(ffmpegDecoder *decoder,const char *path);
+int             ffmpeg_decoder_star(ffmpegDecoder *decoder);
+void            *ffmpeg_decoder_decode_file(void *userData);
 
+int             ffmpeg_decoder_stop(ffmpegDecoder *decoder);
+int             ffmpeg_decode_audio_frame(ffmpegDecoder *decoder, uint8_t *outPcmData,int *outDatasize);
+int             ffmpeg_decode_video_frame(ffmpegDecoder *decoder,AVFrame *frame);
+AVFrame * quque_picture_get_frame(ffmpegDecoder *decoder);
 
+int quque_picture(ffmpegDecoder *decoder,AVFrame *frame);
 #endif /* ffmpegDecoder_h */
