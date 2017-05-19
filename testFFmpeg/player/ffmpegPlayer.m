@@ -72,21 +72,24 @@ int handleVideoCallback(AVFrame *frame,int data){
     OSStatus status;
     int outsize = 0;
     
-    static uint8_t audioBuffer[1024*16];
+    static uint8_t audioBuffer[0x100000];
     
-    ffmpeg_decode_audio_frame(playerDecoder, audioBuffer, &outsize);
-    memcpy(audioQueueBuffer->mAudioData, audioBuffer, outsize);
-//    free(*pcmData);
-//    printf("out size is %d  \n",outsize);
+    uint32_t len = audioQueueBuffer->mAudioDataBytesCapacity;
+
+    static unsigned int buffer_index = 0;
+    buffer_index = 0;
+    while (len>0) {
+        ffmpeg_decode_audio_frame(playerDecoder, audioBuffer, &outsize);
+        memcpy(audioQueueBuffer->mAudioData+buffer_index, audioBuffer, outsize);
+        len-= outsize;
+        buffer_index+= outsize;
+        
+    }
     
-    audioQueueBuffer->mAudioDataByteSize = outsize;
+    audioQueueBuffer->mAudioDataByteSize = audioQueueBuffer->mAudioDataBytesCapacity;
     status = AudioQueueEnqueueBuffer(audioQueue, audioQueueBuffer, 0, NULL);
     
 
-//    AVFrame *rgbFrame = quque_picture_get_frame(playerDecoder);
-//    if (rgbFrame) {
-//        ffmpeg_videooutput_render(rgbFrame);
-//    }
 
 }
 

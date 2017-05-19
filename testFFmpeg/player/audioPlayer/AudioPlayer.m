@@ -36,18 +36,16 @@ static void CheckError(OSStatus error, const char *operation)
 static void BufferCallback(void *inUserData,AudioQueueRef inAQ,
                            AudioQueueBufferRef buffer){
     AudioPlayer* player=(__bridge AudioPlayer*)inUserData;
+    printf("audio queue buffersize : %d",buffer->mAudioDataByteSize);
     [player audioQueueOutputWithQueue:inAQ queueBuffer:buffer];
 }
 
 //缓存数据读取方法的实现
 -(void) audioQueueOutputWithQueue:(AudioQueueRef)audioQueue queueBuffer:(AudioQueueBufferRef)audioQueueBuffer{
     
-    
-    
     if (self.delegate && [self.delegate respondsToSelector:@selector(audioQueueOutputWithQueue:queueBuffer:)]) {
         [self.delegate audioQueueOutputWithQueue:audioQueue queueBuffer:audioQueueBuffer];
     }
-
     
 }
 
@@ -58,20 +56,7 @@ static void BufferCallback(void *inUserData,AudioQueueRef inAQ,
               isInterleaved:(BOOL)isInterleaved
 {
     if (!(self=[super init])) return nil;
-    
-    //打开音频文件
-    
-    //    infile = fopen([path UTF8String], "rb+");
-    
-//    playerDecoder = ffmpeg_decoder_alloc_init();
-//    
-//    ffmpeg_decoder_decode_file(playerDecoder, [path UTF8String]);
-//    
-//    
-//    ffmpeg_decoder_start(playerDecoder);
-    //取得音频数据格式
-    
-    
+
     [self setAudioDataFormatWithSmapleRate:samplerate numChannel:channel format:format isInterleaved:isInterleaved];
     
     printf("setup audio fromat samplerate : %d  chnnel: %d  \n ",samplerate,channel);
@@ -95,8 +80,8 @@ static void BufferCallback(void *inUserData,AudioQueueRef inAQ,
     packetIndex=0;
     for (int i=0; i<NUM_BUFFERS; i++) {
         AudioQueueAllocateBuffer(queue, gBufferSizeBytes, &buffers[i]);
-        memset(buffers[i]->mAudioData, 0, 8192);
-        buffers[i]->mAudioDataByteSize = 8192;
+        memset(buffers[i]->mAudioData, 0, gBufferSizeBytes);
+        buffers[i]->mAudioDataByteSize = gBufferSizeBytes;
         AudioQueueEnqueueBuffer(queue, buffers[i], 0, NULL);
         
     }

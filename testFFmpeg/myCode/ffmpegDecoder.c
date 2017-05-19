@@ -412,7 +412,10 @@ int   ffmpeg_decode_audio_frame(ffmpegDecoder *decoder, uint8_t *outPcmData,int 
     
     
    
-    AVPacket packet;
+//    AVPacket packet;
+    
+    static AVPacket packet;
+    static AVFrame  frame;
     
     int audioLength = 0,gotAudioFrame = 0;
 
@@ -431,20 +434,18 @@ int   ffmpeg_decode_audio_frame(ffmpegDecoder *decoder, uint8_t *outPcmData,int 
 
     }else{
         
-        AVFrame *audioFrame = av_frame_alloc();
+//        AVFrame *audioFrame = av_frame_alloc();
         if (packet.pts != AV_NOPTS_VALUE) {
             decoder->audio_clock = packet.pts*av_q2d((decoder->pFormatCtx->streams[decoder->auidoStreamIndex]->time_base));
         }
         
         printf("audio pts = %f  \n",decoder->audio_clock);
         
-        audioLength = avcodec_decode_audio4(decoder->pAcodectx, audioFrame, &gotAudioFrame, &packet);
+        audioLength = avcodec_decode_audio4(decoder->pAcodectx, &frame, &gotAudioFrame, &packet);
         
         if (audioLength>0 && gotAudioFrame ) {
-//                printf("\n decoder audio success! \n");
             *outDatasize = decoder->audio_buffer_size;
-
-            swr_convert(decoder->swr, &outPcmData, MAX_AUDIO_FRAME_SIZE/2, (const uint8_t **)audioFrame->data, audioFrame->nb_samples);
+            swr_convert(decoder->swr, &outPcmData, MAX_AUDIO_FRAME_SIZE/2, (const uint8_t **)frame.data, frame.nb_samples);
 
             
         }else{
@@ -454,18 +455,13 @@ int   ffmpeg_decode_audio_frame(ffmpegDecoder *decoder, uint8_t *outPcmData,int 
 
         }
         
-        av_free(audioFrame);
+//        av_free(audioFrame);
     }
 
 
     if (packet.data != NULL) {
         av_free_packet(&packet);
     }
-    
-    
-
-  
-
     
     return ret;
 }
