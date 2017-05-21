@@ -49,9 +49,9 @@ int handleVideoCallback(AVFrame *frame,int data){
 
         ffmpeg_videooutput_init();
         CGFloat rate = playerDecoder->width/playerDecoder->height;
-        CGFloat height = 320/rate;
+        CGFloat height = [UIScreen mainScreen].bounds.size.width/rate;
         dispatch_async(dispatch_get_main_queue(), ^{
-            playView = [[FXPlayerView alloc]initWithFrame:CGRectMake(0, 200, 320, height)];
+            playView = [[FXPlayerView alloc]initWithFrame:CGRectMake(0, 200, [UIScreen mainScreen].bounds.size.width, height)];
             if (self.playStateCallBack) {
                 
                 self.playStateCallBack(kffmpegPrepareToPlay);

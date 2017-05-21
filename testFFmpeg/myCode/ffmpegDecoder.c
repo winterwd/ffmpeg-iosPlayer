@@ -368,7 +368,9 @@ int quque_picture(ffmpegDecoder *decoder,AVFrame *frame){
         }else{ //视频比音频快
             delay = diff;
         }
-        
+        if (delay>=1.0) {
+            delay = 1.0;
+        }
         if (delay!=0) {
             usleep(delay*1000000);
         }
