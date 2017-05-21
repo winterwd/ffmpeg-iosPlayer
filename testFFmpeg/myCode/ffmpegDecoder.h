@@ -28,8 +28,8 @@ typedef struct {
     AVCodecContext  *pAcodectx;
     AVStream        *pvideo_st;
     AVStream        *paudio_st;
-    unsigned   short videoStreamIndex;
-    unsigned   short auidoStreamIndex;
+    int8_t videoStreamIndex;
+    int8_t auidoStreamIndex;
     int (*decoded_audio_data_callback)(uint8_t *pcmData,int dataSize);
     int (*decoded_video_data_callback)(AVFrame *yuvData,int dataSize);
     
@@ -76,6 +76,13 @@ typedef struct {
     ffmpegPacketQueue audioPakcetQueue;
     ffmpegPacketQueue videoPacketQueue;
     
+    int8_t  seek_req;
+    int64_t seek_pos;
+    int8_t  seek_flag;
+    
+    double  duration;
+    double  curTime;
+    
 }ffmpegDecoder;
 
 ffmpegDecoder   *ffmpeg_decoder_alloc_init();
@@ -88,5 +95,7 @@ int             ffmpeg_decode_audio_frame(ffmpegDecoder *decoder, uint8_t *outPc
 int             ffmpeg_decode_video_frame(ffmpegDecoder *decoder,AVFrame *frame);
 AVFrame * quque_picture_get_frame(ffmpegDecoder *decoder);
 
-int quque_picture(ffmpegDecoder *decoder,AVFrame *frame);
+int         quque_picture(ffmpegDecoder *decoder,AVFrame *frame);
+
+void        seek_to_time(ffmpegDecoder *decoder, double time);
 #endif /* ffmpegDecoder_h */

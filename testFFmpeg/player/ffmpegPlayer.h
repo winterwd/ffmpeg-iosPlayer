@@ -26,4 +26,7 @@ typedef enum : NSUInteger {
 - (void)stop;
 - (void)destroy;
 - (UIView *)playerView;
+
+@property (nonatomic,assign) double duration;
+@property (nonatomic,assign) double curTime;
 @end

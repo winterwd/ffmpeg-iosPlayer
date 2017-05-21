@@ -26,5 +26,5 @@ int ffmpegPacketQueue_init(ffmpegPacketQueue *q);
 int packet_queue_put(ffmpegPacketQueue *q, AVPacket *pkt);
 int packet_queue_get(ffmpegPacketQueue *q, AVPacket *pkt);
 int packet_queue_block_get(ffmpegPacketQueue *q,AVPacket *pkt,int block);
-
+void packet_quque_flush(ffmpegPacketQueue *q);
 #endif /* ffmpegPacketQueue_h */

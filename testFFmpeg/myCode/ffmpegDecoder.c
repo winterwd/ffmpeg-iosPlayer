@@ -46,7 +46,7 @@ ffmpegDecoder *ffmpeg_decoder_alloc_init()
     instance->vframe_queue_size = 0;
     instance->vframe_queue_windex = 0;
     instance->vframe_queue_rindex = 0;
-    
+    instance->seek_req = 0;
     return instance;
 }
 
@@ -78,9 +78,9 @@ int ffmpeg_decoder_open_file(ffmpegDecoder *decoder,const char *path) {
     
     for (int i=0; i<decoder->pFormatCtx->nb_streams; i++) {
         AVCodecContext *pctx =decoder->pFormatCtx->streams[i]->codec;
-        
+//        AVStream *st = decoder->pFormatCtx->streams[i];
         if (pctx->codec_type == AVMEDIA_TYPE_VIDEO) {
-    
+            
             decoder->videoStreamIndex = i;
             decoder->pVcodec = avcodec_find_decoder(pctx->codec_id);
             decoder->pVcodectx = avcodec_alloc_context3(decoder->pVcodec);
@@ -89,6 +89,8 @@ int ffmpeg_decoder_open_file(ffmpegDecoder *decoder,const char *path) {
             
             ret = avcodec_open2(decoder->pVcodectx, decoder->pVcodec, NULL);
             checkError(ret, 0);
+            
+
             
         }else if (pctx->codec_type == AVMEDIA_TYPE_AUDIO){
             
@@ -100,11 +102,21 @@ int ffmpeg_decoder_open_file(ffmpegDecoder *decoder,const char *path) {
             
             ret = avcodec_open2(decoder->pAcodectx, decoder->pAcodec, NULL);
             checkError(ret, 0);
+            
+
         }
     }
     
-    
-    
+    if (decoder->pFormatCtx->duration!= AV_NOPTS_VALUE) {
+        decoder->duration = decoder->pFormatCtx->duration/AV_TIME_BASE;
+//        printf("video duration: %lld",decoder->pFormatCtx->duration/AV_TIME_BASE);
+    }else if (decoder->videoStreamIndex != -1){
+        AVStream *st = decoder->pFormatCtx->streams[decoder->videoStreamIndex];
+        decoder->duration = st->duration*av_q2d(st->time_base);
+    }else if (decoder->auidoStreamIndex!= -1){
+        AVStream *st = decoder->pFormatCtx->streams[decoder->auidoStreamIndex];
+        decoder->duration = st->duration*av_q2d(st->time_base);
+    }
     // to  AV_SAMPLE_FMT_S16  2 chanels
     SwrContext *swrctx = swr_alloc();
     
@@ -171,11 +183,48 @@ void *ffmpeg_decoder_decode_file(void *userData)
     ffmpegDecoder *decoder = (ffmpegDecoder *)userData;
         
 
+    AVPacket flush_pkt;
+    av_init_packet(&flush_pkt);
+    flush_pkt.data = (uint8_t*)"flush";
     
     for(;;){
         
         if (decoder->quit) {
             break;
+        }
+        
+        if (decoder->seek_req == 1) {
+            int stream_index = -1;
+            int64_t seek_target = decoder->seek_pos;
+            if (decoder->videoStreamIndex>=0) {
+                stream_index = decoder->videoStreamIndex;
+            }else if (decoder->auidoStreamIndex>=0){
+                stream_index = decoder->auidoStreamIndex;
+            }
+            
+            if (stream_index>=0) {
+                seek_target = av_rescale_q(seek_target, AV_TIME_BASE_Q, decoder->pFormatCtx->streams[stream_index]->time_base);
+            }
+            
+            
+            printf("\n begin seek to : %lld \n",seek_target);
+            //快进》》
+            if (av_seek_frame(decoder->pFormatCtx, stream_index, seek_target, decoder->seek_flag)<0) {
+                printf("\n error: when seeking ... \n");
+            }
+            
+            if (decoder->videoStreamIndex>=0) {
+                packet_quque_flush(&decoder->videoPacketQueue);
+//                packet_queue_put(&decoder->videoPacketQueue, &flush_pkt);
+                
+            }
+            
+            if(decoder->auidoStreamIndex>=0){
+                packet_quque_flush(&decoder->audioPakcetQueue);
+//                packet_queue_put(&decoder->audioPakcetQueue, &flush_pkt);
+            }
+            
+            decoder->seek_req = 0;
         }
         
         if (decoder->audioPakcetQueue.size>MAX_AUDIOQ_SIZE || decoder->videoPacketQueue.size>MAX_VIDEOQ_SIZE) {
@@ -219,15 +268,22 @@ void *ffmpeg_video_thread(void *argc){
         }else{
             pts = 0;
         }
-        printf("pts = %f ",pts);
+        
         pts *= av_q2d(decoder->pFormatCtx->streams[decoder->videoStreamIndex]->time_base);
         
-        printf("pts = %f ",pts);
-        if (gotFrame) {
+//        if((pts = av_frame_get_best_effort_timestamp(pframe)) == AV_NOPTS_VALUE) {
+//            pts = av_frame_get_best_effort_timestamp(pframe);
+//        } else {
+//            pts = 0;
+//        }
+//        pts *= av_q2d(decoder->pFormatCtx->streams[decoder->videoStreamIndex]->time_base);
+        printf("pts1 = %f ",pts);
+        if (gotFrame)
+        {
             
             pts = synchronize_video(decoder, pframe, pts);
             
-            printf("pts = %f \n",pts);
+            printf("   pts2 = %f \n",pts);
             //放入缓冲队列里
             if(quque_picture(decoder, pframe)<0) break;
 
@@ -254,6 +310,10 @@ double synchronize_video(ffmpegDecoder *decoder,AVFrame *frame,double pts){
     frame_delay += frame->repeat_pict * (frame_delay*0.5);
     
     decoder->video_clock += frame_delay;
+    
+    decoder->curTime = decoder->video_clock;
+    
+    printf("cur time %f \n",decoder->curTime);
     
     return pts;
     
@@ -344,17 +404,19 @@ int ffmpeg_read_packet_Process(ffmpegDecoder *decoder)
     
     
     AVPacket packet;
+    
+
+
     if (av_read_frame(decoder->pFormatCtx, &packet)>=0) {
         
         if (packet.stream_index == decoder->auidoStreamIndex) { //音频包
 
             packet_queue_put(&decoder->audioPakcetQueue, &packet);
-            
-//            printf("audio packets in queue: %d \n",decoder->audioPakcetQueue.nb_packets);
+
             
         }else if (packet.stream_index == decoder->videoStreamIndex){ //视频包
             packet_queue_put(&decoder->videoPacketQueue, &packet);
-//            printf("vidoe packets in queue: %d \n",decoder->audioPakcetQueue.nb_packets);
+
         }else {
             av_free_packet(&packet); //释放 非音视频包
         }
@@ -434,12 +496,12 @@ int   ffmpeg_decode_audio_frame(ffmpegDecoder *decoder, uint8_t *outPcmData,int 
 
     }else{
         
-//        AVFrame *audioFrame = av_frame_alloc();
+
         if (packet.pts != AV_NOPTS_VALUE) {
             decoder->audio_clock = packet.pts*av_q2d((decoder->pFormatCtx->streams[decoder->auidoStreamIndex]->time_base));
         }
         
-        printf("audio pts = %f  \n",decoder->audio_clock);
+//        printf("audio pts = %f  \n",decoder->audio_clock);
         
         audioLength = avcodec_decode_audio4(decoder->pAcodectx, &frame, &gotAudioFrame, &packet);
         
@@ -464,6 +526,24 @@ int   ffmpeg_decode_audio_frame(ffmpegDecoder *decoder, uint8_t *outPcmData,int 
     }
     
     return ret;
+}
+
+void stream_seek(ffmpegDecoder *decoder,int64_t pos,int rel){
+    
+    if (!decoder->seek_req) {
+        decoder->seek_pos = pos;
+        printf("\n seek to >>> %lld \n",decoder->seek_pos);
+        decoder->seek_flag = rel<0?AVSEEK_FLAG_BACKWARD:0;
+        decoder->seek_req = 1;
+    }
+    
+}
+
+void  seek_to_time(ffmpegDecoder *decoder, double time){
+    
+//    return;
+    int diff = time - decoder->curTime;
+    stream_seek(decoder, (int64_t)(time * AV_TIME_BASE), diff);
 }
 
 int  ffmpeg_decoder_stop(ffmpegDecoder *decoder)

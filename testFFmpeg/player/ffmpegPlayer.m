@@ -97,8 +97,35 @@ int handleVideoCallback(AVFrame *frame,int data){
 {
     ffmpeg_decoder_star(playerDecoder);
     [audioPlayer play];
+    
+//    [self test];
 
 }
+
+
+- (double)duration
+{
+    return  playerDecoder->duration;
+}
+
+- (double)curTime{
+    return  playerDecoder->curTime;
+}
+
+- (void)setCurTime:(double)curTime
+{
+    seek_to_time(playerDecoder, curTime);
+}
+
+- (void)test{
+    
+    
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        seek_to_time(playerDecoder, playerDecoder->curTime+5);
+        [self test];
+    });
+}
+
 - (void)pause
 {
     

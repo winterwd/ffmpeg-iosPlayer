@@ -14,7 +14,10 @@
 {
     ffmpegPlayer *player;
 }
+@property (strong, nonatomic) IBOutlet UILabel *durationLb;
+@property (strong, nonatomic) IBOutlet UILabel *curLb;
 
+@property (strong, nonatomic) IBOutlet UISlider *slierView;
 @end
 
 @implementation ViewController
@@ -22,14 +25,16 @@
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-	
-    
-    printf("111\n");
-//    [self testThread];
+
     [self testFFmpeg];
-//    playerView = [[FXPlayerView alloc]initWithFrame:CGRectMake(0, 200, 320, 480)];
-//    [self.view addSubview:playerView];
-//    [self testFFmpeg];
+    
+    
+    NSTimer *timer = [NSTimer scheduledTimerWithTimeInterval:0.1 repeats:YES block:^(NSTimer * _Nonnull timer) {
+        self.curLb.text = [self timeFormatted:(int)player.curTime];
+    }];
+    
+    [[NSRunLoop currentRunLoop]addTimer:timer forMode:NSRunLoopCommonModes];
+    
     
 
 }
@@ -43,44 +48,45 @@
     [player stop];
 }
 
+
 - (void)didReceiveMemoryWarning
 {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
 }
 
-static FILE *outFile;
-
-/*
-static inline int decodeAudioCallBack(uint8_t *outbuf,int bufsize)
+- (NSString *)timeFormatted:(int)totalSeconds
 {
     
-    fwrite(outbuf, 1, bufsize, outFile);
-    return 1;
+    int seconds = totalSeconds % 60;
+    int minutes = (totalSeconds / 60) % 60;
+    int hours = totalSeconds / 3600;
+    
+    return [NSString stringWithFormat:@"%02d:%02d:%02d",hours, minutes, seconds];
 }
-*/
 
-- (void)testAudioQueuePlay
-{
-      
+
+
+- (IBAction)endEdit:(UISlider *)sender {
+    self.curLb.text = [self timeFormatted:sender.value];
+    player.curTime = sender.value;
+}
+
+- (IBAction)sliderChanged:(UISlider *)sender {
+    self.curLb.text = [self timeFormatted:sender.value];
 }
 
 
 - (void)testFFmpeg
 {
     
-//    NSString *infileName = @"/Users/xiaowoniu/Documents/一些素材/test.flv";
+    NSString *infileName = @"/Users/xiaowoniu/Documents/一些素材/test.flv";
     ///Users/xiaowoniu/Downloads/13.mp4
     ///Users/smart/Desktop/未命名文件夹/output.mp4
 //    NSString *infileName = @"/Users/smart/Documents/temp/test.flv";
-    NSString *infileName = @"/Users/smart/Desktop/未命名文件夹/output.mp4";
-    NSString *outFileName = @"/Users/smart/Documents/temp/test.pcm";
-    
-//    ffmpegDecoder *decoder = ffmpeg_decoder_alloc_init();
-//    decoder->decoded_audio_data_callback = decodeAudioCallBack;
-//    ffmpeg_decoder_decode_file(decoder,[infileName UTF8String]);
-//    outFile = fopen([outFileName UTF8String], "wb+");
-//    ffmpeg_decoder_start(decoder);
+//    NSString *infileName = @"/Users/smart/Desktop/未命名文件夹/output.mp4";
+//    NSString *outFileName = @"/Users/smart/Documents/temp/test.pcm";
+
     
     player = [[ffmpegPlayer alloc]init];
     [player openFile:infileName];
@@ -91,6 +97,12 @@ static inline int decodeAudioCallBack(uint8_t *outbuf,int bufsize)
         if (status == kffmpegPrepareToPlay) {
             [weakSelf.view addSubview:[weakPlayer playerView]];
             [weakPlayer play];
+            
+            weakSelf.slierView.maximumValue = weakPlayer.duration;
+            weakSelf.slierView.minimumValue = 0.0f;
+            
+            weakSelf.durationLb.text = [weakSelf timeFormatted:weakPlayer.duration];
+            
         }
         
     }];

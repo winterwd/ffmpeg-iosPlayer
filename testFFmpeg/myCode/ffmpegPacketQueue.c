@@ -55,6 +55,22 @@ int packet_queue_put(ffmpegPacketQueue *q, AVPacket *pkt)
 int quit = 0;
 
 
+void packet_quque_flush(ffmpegPacketQueue *q){
+    AVPacketList *pkt, *pkt1;
+    pthread_mutex_lock(&q->mute_lock);
+    for(pkt = q->first; pkt != NULL; pkt = pkt1) {
+        pkt1 = pkt->next;
+        av_free_packet(&pkt->pkt);
+        av_freep(&pkt);
+    }
+    q->last = NULL;
+    q->first = NULL;
+    q->nb_packets = 0;
+    q->size = 0;
+    pthread_mutex_unlock(&q->mute_lock);
+}
+
+
 int packet_queue_block_get(ffmpegPacketQueue *q,AVPacket *pkt,int block){
     AVPacketList *pkt1;
     int ret = 1;
