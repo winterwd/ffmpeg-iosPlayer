@@ -42,16 +42,14 @@ typedef struct {
     //audio
     SwrContext *swr;
     int    audio_buffer_size;
-    uint8_t *audio_buffer;
     int    samplerate;
     int    nb_channel;
     int    byte_per_seconds;
-    double audioDelay; ///< audio queue 初始buffer 的时间延迟
+
     
     //video
     struct SwsContext *sws;
     int    video_buffer_size;
-    uint8_t *videoOutBuffer;
     int    width;
     int    height;
     
@@ -60,10 +58,7 @@ typedef struct {
     int    vframe_queue_windex;
     int    vframe_queue_rindex;
     
-    double video_clock;
-    
-    double audio_clock;
-    
+
     
     AVFrame *pFrameRGB;
     AVFrame *pVideoFrame;
@@ -71,6 +66,7 @@ typedef struct {
     //control
     int    stop;
     short   quit;
+    uint8_t pause;
     
     char   fileName[1024];
     
@@ -78,16 +74,23 @@ typedef struct {
     ffmpegPacketQueue audioPakcetQueue;
     ffmpegPacketQueue videoPacketQueue;
     
+    //seek 相关的数据
     int8_t  seek_req;
     int64_t seek_pos;
     int8_t  seek_flag;
     
+    //时间 相关的数据
     double  duration;
     double  curTime;
+    double video_clock;
+    double audio_clock;
+    double audioDelay; ///< audio queue 初始buffer 的时间延迟
+    
     
 }ffmpegDecoder;
 
 ffmpegDecoder   *ffmpeg_decoder_alloc_init();
+
 int             ffmpeg_decoder_open_file(ffmpegDecoder *decoder,const char *path);
 int             ffmpeg_decoder_star(ffmpegDecoder *decoder);
 void            *ffmpeg_decoder_decode_file(void *userData);
@@ -95,9 +98,9 @@ void            *ffmpeg_decoder_decode_file(void *userData);
 int             ffmpeg_decoder_stop(ffmpegDecoder *decoder);
 int             ffmpeg_decode_audio_frame(ffmpegDecoder *decoder, uint8_t *outPcmData,int *outDatasize);
 int             ffmpeg_decode_video_frame(ffmpegDecoder *decoder,AVFrame *frame);
-AVFrame * quque_picture_get_frame(ffmpegDecoder *decoder);
+AVFrame *       quque_picture_get_frame(ffmpegDecoder *decoder);
 
-int         quque_picture(ffmpegDecoder *decoder,AVFrame *frame);
+int             quque_picture(ffmpegDecoder *decoder,AVFrame *frame);
 
-void        seek_to_time(ffmpegDecoder *decoder, double time);
+void            seek_to_time(ffmpegDecoder *decoder, double time);
 #endif /* ffmpegDecoder_h */

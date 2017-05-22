@@ -20,11 +20,16 @@ static inline void checkError(int ret,int success){
     }
 }
 
+
 int ffmpeg_read_packet_Process(ffmpegDecoder *decoder);
+
+void ffmpeg_close_decoder(ffmpegDecoder *decoder);
+
 double synchronize_video(ffmpegDecoder *decoder,AVFrame *frame,double pts);
 ffmpegDecoder *ffmpeg_decoder_alloc_init()
 {
     av_register_all();
+    avformat_network_init();
     ffmpegDecoder *instance = (ffmpegDecoder *)malloc(sizeof(ffmpegDecoder));
     instance->pAcodec = NULL;
     instance->pVcodec = NULL;
@@ -135,7 +140,6 @@ int ffmpeg_decoder_open_file(ffmpegDecoder *decoder,const char *path) {
     
     decoder->audio_buffer_size = av_samples_get_buffer_size(NULL, decoder->pAcodectx->channels, decoder->pAcodectx->frame_size, out_sample_fmt, 0);
     
-    decoder->audio_buffer = (uint8_t *)malloc(decoder->audio_buffer_size);
     
     decoder->samplerate = out_sample_rate;
     decoder->nb_channel = decoder->pAcodectx->channels;
@@ -174,15 +178,11 @@ void *ffmpeg_decoder_decode_file(void *userData)
 {
 
     ffmpegDecoder *decoder = (ffmpegDecoder *)userData;
-        
-
-    AVPacket flush_pkt;
-    av_init_packet(&flush_pkt);
-    flush_pkt.data = (uint8_t*)"flush";
+    
     
     for(;;){
         
-        if (decoder->quit) {
+        if (decoder->quit == 1) {
             break;
         }
         
@@ -235,6 +235,12 @@ void *ffmpeg_decoder_decode_file(void *userData)
     }
     
     printf("decode video thread is ending ...\n");
+    
+    if (decoder->videoStreamIndex>=0) packet_quque_flush(&decoder->videoPacketQueue);
+    if(decoder->auidoStreamIndex>=0) packet_quque_flush(&decoder->audioPakcetQueue);
+    
+    pthread_exit(NULL);
+    
     return NULL;
 
     
@@ -248,6 +254,11 @@ void *ffmpeg_video_thread(void *argc){
     AVFrame *pframe = av_frame_alloc();
     int gotFrame = 0;
     while (1) {
+        
+        
+        if (decoder->quit == 1) {
+            break;
+        }
         
         if (packet_queue_block_get(&(decoder->videoPacketQueue), &packet,1)<1) {
             break;
@@ -276,6 +287,8 @@ void *ffmpeg_video_thread(void *argc){
     }
     
     av_frame_free(&pframe);
+    
+    pthread_exit(NULL);
     return NULL;
 }
 
@@ -342,11 +355,9 @@ int quque_picture(ffmpegDecoder *decoder,AVFrame *frame){
     
     
     if (decoder->decoded_video_data_callback) {
-        
-        
-        
+
         double diff = decoder->video_clock - decoder->audio_clock;
-        printf("video clock: %f   audio_clock : %f   diff:[ %f ] \n",decoder->video_clock,decoder->audio_clock,diff);
+//        printf("video clock: %f   audio_clock : %f   diff:[ %f ] \n",decoder->video_clock,decoder->audio_clock,diff);
         double delay = 0;
         if (diff < 0) {  //视频比音频慢
             delay = 0;
@@ -390,11 +401,7 @@ int ffmpeg_decoder_star(ffmpegDecoder *decoder){
 int ffmpeg_read_packet_Process(ffmpegDecoder *decoder)
 {
     
-    
     AVPacket packet;
-    
-
-
     if (av_read_frame(decoder->pFormatCtx, &packet)>=0) {
         
         if (packet.stream_index == decoder->auidoStreamIndex) { //音频包
@@ -412,8 +419,18 @@ int ffmpeg_read_packet_Process(ffmpegDecoder *decoder)
     }else{
         if(decoder->pFormatCtx->pb->error == 0){
             usleep(100*1000);
+            if (avio_feof(decoder->pFormatCtx->pb)!=0) {  //文件结束了
+                
+                printf("====end of file === \n");
+                
+                decoder->quit = 1;
+                
+                return -1;
+                
+            }
         }else{
             //read frame error
+
             return -1;
         }
     }
@@ -472,7 +489,7 @@ int   ffmpeg_decode_audio_frame(ffmpegDecoder *decoder, uint8_t *outPcmData,int 
 
 
     if (ret == 0) {
-        printf("\n audio queue is empty! \n");\
+//        printf("\n audio queue is empty! \n");
         *outDatasize = decoder->audio_buffer_size;
         memset(outPcmData, 0, decoder->audio_buffer_size);
         decoder->audio_clock += decoder->audio_buffer_size/(float)decoder->byte_per_seconds;
@@ -531,11 +548,22 @@ void  seek_to_time(ffmpegDecoder *decoder, double time){
     stream_seek(decoder, (int64_t)(time * AV_TIME_BASE), diff);
 }
 
+
 int  ffmpeg_decoder_stop(ffmpegDecoder *decoder)
 {
     decoder->quit = 1;
     pthread_cancel(decoder->decodeThread);
     return 1;
+}
+
+void ffmpeg_close_decoder(ffmpegDecoder *decoder)
+{
+    avcodec_close(decoder->pAcodectx);
+    avcodec_close(decoder->pVcodectx);
+    avformat_flush(decoder->pFormatCtx);
+    avformat_close_input(&decoder->pFormatCtx);
+    
+    
 }
 
 void SaveFrame(AVFrame *pFrame, int width, int height, int iFrame) {
