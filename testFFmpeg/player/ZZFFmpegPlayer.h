@@ -1,5 +1,5 @@
 //
-//  ffmpegPlayer.h
+//  ZZFFmpegPlayer.h
 //  testFFmpeg
 //
 //  Created by zelong zou on 16/8/31.
@@ -15,7 +15,7 @@ typedef enum : NSUInteger {
     kffmpegPrepareToPlay,
 } FFmpegPlayerStatus;
 
-@interface ffmpegPlayer : NSObject
+@interface ZZFFmpegPlayer : NSObject
 {
     ffmpegDecoder *playerDecoder;
 }

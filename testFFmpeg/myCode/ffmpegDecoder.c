@@ -47,6 +47,10 @@ ffmpegDecoder *ffmpeg_decoder_alloc_init()
     instance->vframe_queue_windex = 0;
     instance->vframe_queue_rindex = 0;
     instance->seek_req = 0;
+    instance->video_clock = 0.0;
+    instance->audio_clock = 0.0;
+    instance->audioDelay = 0.0;
+    instance->byte_per_seconds = 0;
     return instance;
 }
 
@@ -78,19 +82,14 @@ int ffmpeg_decoder_open_file(ffmpegDecoder *decoder,const char *path) {
     
     for (int i=0; i<decoder->pFormatCtx->nb_streams; i++) {
         AVCodecContext *pctx =decoder->pFormatCtx->streams[i]->codec;
-//        AVStream *st = decoder->pFormatCtx->streams[i];
         if (pctx->codec_type == AVMEDIA_TYPE_VIDEO) {
-            
             decoder->videoStreamIndex = i;
             decoder->pVcodec = avcodec_find_decoder(pctx->codec_id);
             decoder->pVcodectx = avcodec_alloc_context3(decoder->pVcodec);
             ret = avcodec_copy_context(decoder->pVcodectx, pctx);
             checkError(ret, 0);
-            
             ret = avcodec_open2(decoder->pVcodectx, decoder->pVcodec, NULL);
             checkError(ret, 0);
-            
-
             
         }else if (pctx->codec_type == AVMEDIA_TYPE_AUDIO){
             
@@ -109,7 +108,6 @@ int ffmpeg_decoder_open_file(ffmpegDecoder *decoder,const char *path) {
     
     if (decoder->pFormatCtx->duration!= AV_NOPTS_VALUE) {
         decoder->duration = decoder->pFormatCtx->duration/AV_TIME_BASE;
-//        printf("video duration: %lld",decoder->pFormatCtx->duration/AV_TIME_BASE);
     }else if (decoder->videoStreamIndex != -1){
         AVStream *st = decoder->pFormatCtx->streams[decoder->videoStreamIndex];
         decoder->duration = st->duration*av_q2d(st->time_base);
@@ -132,8 +130,7 @@ int ffmpeg_decoder_open_file(ffmpegDecoder *decoder,const char *path) {
     swr_alloc_set_opts(swrctx, out_ch_layout, out_sample_fmt, out_sample_rate, in_ch_layout, in_sample_fmt, in_sample_rate, 0, NULL);
     
     swr_init(swrctx);
-    
-    
+
     decoder->swr = swrctx;
     
     decoder->audio_buffer_size = av_samples_get_buffer_size(NULL, decoder->pAcodectx->channels, decoder->pAcodectx->frame_size, out_sample_fmt, 0);
@@ -143,22 +140,18 @@ int ffmpeg_decoder_open_file(ffmpegDecoder *decoder,const char *path) {
     decoder->samplerate = out_sample_rate;
     decoder->nb_channel = decoder->pAcodectx->channels;
     
+    //每秒的音频数据大小
+    decoder->byte_per_seconds = decoder->nb_channel*decoder->samplerate*2;
+    
+    //音频初始延迟 （3是auido quque初始buffer个数）
+    decoder->audioDelay = 0x10000/(float)decoder->byte_per_seconds * 3;
+    
+    printf("audio delay is %f\n",decoder->audioDelay);
+
     
     //video
     decoder->width = decoder->pVcodectx->width;
     decoder->height = decoder->pVcodectx->height;
-    
-    
-    //    numBytes=avpicture_get_size(PIX_FMT_RGB24, pCodecCtx->width,
-    //                                pCodecCtx->height);
-    //    buffer=(uint8_t *)av_malloc(numBytes*sizeof(uint8_t));
-    //
-    //    // Assign appropriate parts of buffer to image planes in pFrameRGB
-    //    // Note that pFrameRGB is an AVFrame, but AVFrame is a superset
-    //    // of AVPicture
-    
-    
-    
     decoder->video_buffer_size = avpicture_get_size(PIX_FMT_YUV420P, decoder->width, decoder->height);
 
     for (int i=0; i<VIDEO_QUEUE_SIZE; i++) {
@@ -213,6 +206,7 @@ void *ffmpeg_decoder_decode_file(void *userData)
                 printf("\n error: when seeking ... \n");
             }
             
+            
             if (decoder->videoStreamIndex>=0) {
                 packet_quque_flush(&decoder->videoPacketQueue);
 //                packet_queue_put(&decoder->videoPacketQueue, &flush_pkt);
@@ -225,6 +219,8 @@ void *ffmpeg_decoder_decode_file(void *userData)
             }
             
             decoder->seek_req = 0;
+            decoder->video_clock = decoder->curTime;
+            decoder->audio_clock = decoder->curTime;
         }
         
         if (decoder->audioPakcetQueue.size>MAX_AUDIOQ_SIZE || decoder->videoPacketQueue.size>MAX_VIDEOQ_SIZE) {
@@ -256,34 +252,21 @@ void *ffmpeg_video_thread(void *argc){
         if (packet_queue_block_get(&(decoder->videoPacketQueue), &packet,1)<1) {
             break;
         }
-        
         //解码
         avcodec_decode_video2(decoder->pVcodectx, pframe, &gotFrame, &packet);
         double pts = 0;
-        
-        if (packet.dts == AV_NOPTS_VALUE && pframe->opaque&& *(uint64_t *)pframe->opaque != AV_NOPTS_VALUE) {
-            pts = *(uint64_t *)pframe->opaque;
-        }else if (packet.dts != AV_NOPTS_VALUE){
-            pts = packet.dts;
-        }else{
+        pts = av_frame_get_best_effort_timestamp(pframe);
+        if(pts == AV_NOPTS_VALUE) {
             pts = 0;
         }
-        
         pts *= av_q2d(decoder->pFormatCtx->streams[decoder->videoStreamIndex]->time_base);
-        
-//        if((pts = av_frame_get_best_effort_timestamp(pframe)) == AV_NOPTS_VALUE) {
-//            pts = av_frame_get_best_effort_timestamp(pframe);
-//        } else {
-//            pts = 0;
-//        }
-//        pts *= av_q2d(decoder->pFormatCtx->streams[decoder->videoStreamIndex]->time_base);
-        printf("pts1 = %f ",pts);
-        if (gotFrame)
-        {
-            
+//        printf("pts1 = %f ",pts);
+
+        if (gotFrame){
+
             pts = synchronize_video(decoder, pframe, pts);
             
-            printf("   pts2 = %f \n",pts);
+//            printf("   pts2 = %f \n",pts);
             //放入缓冲队列里
             if(quque_picture(decoder, pframe)<0) break;
 
@@ -301,6 +284,8 @@ double synchronize_video(ffmpegDecoder *decoder,AVFrame *frame,double pts){
     double frame_delay;
     if (pts == 0) {
         pts = decoder->video_clock;
+        
+
     }else{
         decoder->video_clock = pts;
     }
@@ -313,7 +298,7 @@ double synchronize_video(ffmpegDecoder *decoder,AVFrame *frame,double pts){
     
     decoder->curTime = decoder->video_clock;
     
-    printf("cur time %f \n",decoder->curTime);
+//    printf("cur time %f  ",decoder->curTime);
     
     return pts;
     
@@ -361,7 +346,7 @@ int quque_picture(ffmpegDecoder *decoder,AVFrame *frame){
         
         
         double diff = decoder->video_clock - decoder->audio_clock;
-        
+        printf("video clock: %f   audio_clock : %f   diff:[ %f ] \n",decoder->video_clock,decoder->audio_clock,diff);
         double delay = 0;
         if (diff < 0) {  //视频比音频慢
             delay = 0;
@@ -369,6 +354,7 @@ int quque_picture(ffmpegDecoder *decoder,AVFrame *frame){
             delay = diff;
         }
         if (delay>=1.0) {
+            printf("----------delay > 1.0 --------- \n");
             delay = 1.0;
         }
         if (delay!=0) {
@@ -473,11 +459,7 @@ int ffmpeg_decode_video_frame(ffmpegDecoder *decoder,AVFrame *frame)
 
 int   ffmpeg_decode_audio_frame(ffmpegDecoder *decoder, uint8_t *outPcmData,int *outDatasize)
 {
-    
-    
-   
-//    AVPacket packet;
-    
+
     static AVPacket packet;
     static AVFrame  frame;
     
@@ -493,6 +475,8 @@ int   ffmpeg_decode_audio_frame(ffmpegDecoder *decoder, uint8_t *outPcmData,int 
         printf("\n audio queue is empty! \n");\
         *outDatasize = decoder->audio_buffer_size;
         memset(outPcmData, 0, decoder->audio_buffer_size);
+        decoder->audio_clock += decoder->audio_buffer_size/(float)decoder->byte_per_seconds;
+        decoder->audio_clock -= decoder->audioDelay;
         return ret;
 
 
@@ -501,9 +485,11 @@ int   ffmpeg_decode_audio_frame(ffmpegDecoder *decoder, uint8_t *outPcmData,int 
 
         if (packet.pts != AV_NOPTS_VALUE) {
             decoder->audio_clock = packet.pts*av_q2d((decoder->pFormatCtx->streams[decoder->auidoStreamIndex]->time_base));
+            //audio queue 有三个buffer， 当前音频时间 需要减去初始三个音频缓冲buffer的时间 , 每个buffer大小为0x10000
+            decoder->audio_clock -= decoder->audioDelay; //当前正在播放的音频播放时间 (当前正在播放时间 = 当前解出祯的时间 - 剩余buffer所需时间)
+            decoder->audio_clock = decoder->audio_clock <0 ?  0 : decoder->audio_clock;
         }
         
-//        printf("audio pts = %f  \n",decoder->audio_clock);
         
         audioLength = avcodec_decode_audio4(decoder->pAcodectx, &frame, &gotAudioFrame, &packet);
         
@@ -518,8 +504,6 @@ int   ffmpeg_decode_audio_frame(ffmpegDecoder *decoder, uint8_t *outPcmData,int 
             ret = 0;
 
         }
-        
-//        av_free(audioFrame);
     }
 
 
@@ -543,7 +527,6 @@ void stream_seek(ffmpegDecoder *decoder,int64_t pos,int rel){
 
 void  seek_to_time(ffmpegDecoder *decoder, double time){
     
-//    return;
     int diff = time - decoder->curTime;
     stream_seek(decoder, (int64_t)(time * AV_TIME_BASE), diff);
 }

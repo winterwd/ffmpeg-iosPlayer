@@ -1,14 +1,14 @@
 //
-//  AudioPlayer.m
+//  ZZAudioPlayer.m
 //  testFFmpeg
 //
 //  Created by zelong zou on 16/8/26.
 //  Copyright © 2016年 XiaoWoNiu2014. All rights reserved.
 //
 
-#import "AudioPlayer.h"
+#import "ZZAudioPlayer.h"
 
-@implementation AudioPlayer
+@implementation ZZAudioPlayer
 
 static UInt32 gBufferSizeBytes=0x10000;//It muse be pow(2,x)
 
@@ -35,8 +35,17 @@ static void CheckError(OSStatus error, const char *operation)
 //回调函数(Callback)的实现
 static void BufferCallback(void *inUserData,AudioQueueRef inAQ,
                            AudioQueueBufferRef buffer){
-    AudioPlayer* player=(__bridge AudioPlayer*)inUserData;
-    printf("audio queue buffersize : %d",buffer->mAudioDataByteSize);
+    ZZAudioPlayer* player=(__bridge ZZAudioPlayer*)inUserData;
+    
+    
+//    static AudioTimeStamp timestamp;
+//    AudioQueueGetCurrentTime(inAQ, NULL, &timestamp, NULL);
+//    
+//    NSTimeInterval playedTime = timestamp.mSampleTime / player->dataFormat.mSampleRate;
+//    
+//    printf("===sameple time : %f    playedTime: %f \n",timestamp.mSampleTime,playedTime);
+    
+//    printf("audio queue buffersize : %d",buffer->mAudioDataByteSize);
     [player audioQueueOutputWithQueue:inAQ queueBuffer:buffer];
 }
 

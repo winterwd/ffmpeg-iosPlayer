@@ -1,5 +1,5 @@
 //
-//  AudioPlayer.h
+//  ZZAudioPlayer.h
 //  testFFmpeg
 //
 //  Created by zelong zou on 16/8/26.
@@ -13,7 +13,7 @@
 @protocol AudioPlayerDelegate ;
 
 
-@interface AudioPlayer : NSObject
+@interface ZZAudioPlayer : NSObject
 {
 
     //音频流描述对象

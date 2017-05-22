@@ -1,5 +1,5 @@
 //
-//  FXPlayerView.m
+//  ZZVideoPlayerView.m
 
 //
 
@@ -7,7 +7,7 @@
 //
 
 
-#import "FXPlayerView.h"
+#import "ZZVideoPlayerView.h"
 #import <QuartzCore/QuartzCore.h>
 #import <OpenGLES/EAGLDrawable.h>
 #import <OpenGLES/EAGL.h>
@@ -351,7 +351,7 @@ int _kplayer_videooutput_uninit( void* extend_handle )
  */
 
 
-@implementation FXPlayerView
+@implementation ZZVideoPlayerView
 
 - (BOOL) getGlRenderFinishedStatue {
     if (render == NULL) {

@@ -45,6 +45,8 @@ typedef struct {
     uint8_t *audio_buffer;
     int    samplerate;
     int    nb_channel;
+    int    byte_per_seconds;
+    double audioDelay; ///< audio queue 初始buffer 的时间延迟
     
     //video
     struct SwsContext *sws;

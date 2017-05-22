@@ -1,11 +1,11 @@
 //
-//  FXPlayerView.h
+//  ZZVideoPlayerView.h
 
 //  Copyright (c) 2016年 ZouZeLong. All rights reserved.
 //
 
 #import <UIKit/UIKit.h>
 
-@interface FXPlayerView : UIView
+@interface ZZVideoPlayerView : UIView
 - (BOOL) getGlRenderFinishedStatue;
 @end
