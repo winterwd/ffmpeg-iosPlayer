@@ -29,8 +29,6 @@ extern void ffmpeg_videooutput_render(AVFrame *frame);
     return self;
 }
 
-
-
 int handleVideoCallback(AVFrame *frame,int data){
     ffmpeg_videooutput_render(frame);
     return 1;
@@ -86,13 +84,8 @@ int handleVideoCallback(AVFrame *frame,int data){
         buffer_index+= outsize;
         
     }
-    
-    
-    
     audioQueueBuffer->mAudioDataByteSize = audioQueueBuffer->mAudioDataBytesCapacity;
     status = AudioQueueEnqueueBuffer(audioQueue, audioQueueBuffer, 0, NULL);
-    
-
 
 }
 

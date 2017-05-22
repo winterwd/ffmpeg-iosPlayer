@@ -44,10 +44,6 @@ ffmpegDecoder *ffmpeg_decoder_alloc_init()
     instance->stop = 0;
     instance->decoded_audio_data_callback = NULL;
     instance->decoded_video_data_callback = NULL;
-    ffmpegPacketQueue_init(&instance->audioPakcetQueue);
-    ffmpegPacketQueue_init(&instance->videoPacketQueue);
-    pthread_mutex_init(&instance->pic_mutex, NULL);
-    pthread_cond_init(&instance->pic_cond, NULL);
     instance->vframe_queue_size = 0;
     instance->vframe_queue_windex = 0;
     instance->vframe_queue_rindex = 0;
@@ -56,6 +52,10 @@ ffmpegDecoder *ffmpeg_decoder_alloc_init()
     instance->audio_clock = 0.0;
     instance->audioDelay = 0.0;
     instance->byte_per_seconds = 0;
+    ffmpegPacketQueue_init(&instance->audioPakcetQueue);
+    ffmpegPacketQueue_init(&instance->videoPacketQueue);
+    pthread_mutex_init(&instance->pic_mutex, NULL);
+    pthread_cond_init(&instance->pic_cond, NULL);
     return instance;
 }
 
@@ -402,7 +402,9 @@ int ffmpeg_read_packet_Process(ffmpegDecoder *decoder)
 {
     
     AVPacket packet;
-    if (av_read_frame(decoder->pFormatCtx, &packet)>=0) {
+    
+    int ret = av_read_frame(decoder->pFormatCtx, &packet);
+    if (ret>=0) {
         
         if (packet.stream_index == decoder->auidoStreamIndex) { //音频包
 
@@ -419,18 +421,16 @@ int ffmpeg_read_packet_Process(ffmpegDecoder *decoder)
     }else{
         if(decoder->pFormatCtx->pb->error == 0){
             usleep(100*1000);
-            if (avio_feof(decoder->pFormatCtx->pb)!=0) {  //文件结束了
-                
-                printf("====end of file === \n");
-                
-                decoder->quit = 1;
-                
-                return -1;
-                
-            }
+
         }else{
             //read frame error
-
+            decoder->quit = 1;
+            return -1;
+        }
+        
+        if (ret == AVERROR_EOF) { //文件结束了
+            printf("====end of file === \n");
+            decoder->quit = 1;
             return -1;
         }
     }
@@ -452,7 +452,7 @@ int ffmpeg_decode_video_frame(ffmpegDecoder *decoder,AVFrame *frame)
     AVFrame *pframe = av_frame_alloc();
     int ret = packet_queue_get(&decoder->videoPacketQueue,&packet);
     if (ret == 0) {
-        printf("\n queue is empty! \n");
+        printf("\n video queue is empty! \n");
         return  0;
     }else{
         
