@@ -73,15 +73,10 @@ int ffmpeg_decoder_open_file(ffmpegDecoder *decoder,const char *path) {
     decoder->pFormatCtx = avformat_alloc_context();
     
     ret = avformat_open_input(&decoder->pFormatCtx, decoder->fileName, NULL, NULL);
-    
-    checkError(ret, 0);
+    if (ret<0) goto fail;
     
     ret =  avformat_find_stream_info(decoder->pFormatCtx, NULL);
-    
-    if (ret<0) {
-        checkError(ret, 0);
-        return 0;
-    }
+    if (ret<0)  goto fail;
     
     av_dump_format(decoder->pFormatCtx, 0, decoder->fileName, 0);
     
@@ -92,9 +87,10 @@ int ffmpeg_decoder_open_file(ffmpegDecoder *decoder,const char *path) {
             decoder->pVcodec = avcodec_find_decoder(pctx->codec_id);
             decoder->pVcodectx = avcodec_alloc_context3(decoder->pVcodec);
             ret = avcodec_copy_context(decoder->pVcodectx, pctx);
-            checkError(ret, 0);
+            if(ret!=0) goto fail;
+            
             ret = avcodec_open2(decoder->pVcodectx, decoder->pVcodec, NULL);
-            checkError(ret, 0);
+            if(ret<0) goto fail;
             
         }else if (pctx->codec_type == AVMEDIA_TYPE_AUDIO){
             
@@ -102,10 +98,10 @@ int ffmpeg_decoder_open_file(ffmpegDecoder *decoder,const char *path) {
             decoder->pAcodec = avcodec_find_decoder(pctx->codec_id);
             decoder->pAcodectx = avcodec_alloc_context3(decoder->pAcodec);
             ret = avcodec_copy_context(decoder->pAcodectx, pctx);
-            checkError(ret, 0);
+            if(ret!=0) goto fail;
             
             ret = avcodec_open2(decoder->pAcodectx, decoder->pAcodec, NULL);
-            checkError(ret, 0);
+            if(ret<0) goto fail;
             
 
         }
@@ -172,6 +168,11 @@ int ffmpeg_decoder_open_file(ffmpegDecoder *decoder,const char *path) {
     decoder->sws = sws_getContext(decoder->width, decoder->height, decoder->pVcodectx->pix_fmt, decoder->width, decoder->height, PIX_FMT_YUV420P, SWS_BILINEAR, NULL, NULL, NULL);
     
     return 1;
+    
+fail:
+    printf("line[%d]: %s \n",(__LINE__),av_err2str(ret)) ;
+    avformat_close_input(&decoder->pFormatCtx);
+    return -1;
 }
 
 void *ffmpeg_decoder_decode_file(void *userData)
@@ -276,7 +277,6 @@ void *ffmpeg_video_thread(void *argc){
         if (gotFrame){
 
             pts = synchronize_video(decoder, pframe, pts);
-            
 //            printf("   pts2 = %f \n",pts);
             //放入缓冲队列里
             if(quque_picture(decoder, pframe)<0) break;
@@ -419,6 +419,9 @@ int ffmpeg_read_packet_Process(ffmpegDecoder *decoder)
         }
   
     }else{
+        
+        printf("line[%d]: %s \n",(__LINE__),av_err2str(ret)) ;
+        
         if(decoder->pFormatCtx->pb->error == 0){
             usleep(100*1000);
 
@@ -482,9 +485,6 @@ int   ffmpeg_decode_audio_frame(ffmpegDecoder *decoder, uint8_t *outPcmData,int 
     
     int audioLength = 0,gotAudioFrame = 0;
 
-    
-
-    
     int ret = packet_queue_get(&decoder->audioPakcetQueue,&packet);
 
 

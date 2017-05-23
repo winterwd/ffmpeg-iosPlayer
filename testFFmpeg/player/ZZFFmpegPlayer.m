@@ -39,24 +39,30 @@ int handleVideoCallback(AVFrame *frame,int data){
     dispatch_async(dispatch_get_global_queue(0, 0), ^{
         
 
-        ffmpeg_decoder_open_file(playerDecoder, [path UTF8String]);
-        playerDecoder->decoded_video_data_callback = handleVideoCallback;
-        audioPlayer = [[ZZAudioPlayer alloc]initWithAudioSamplate:playerDecoder->samplerate numChannel:playerDecoder->nb_channel format:kAudioFormatFlagIsSignedInteger isInterleaved:YES];
-        audioPlayer.delegate = self;
+        int ret = ffmpeg_decoder_open_file(playerDecoder, [path UTF8String]);
+        if (ret>=0) {
+            playerDecoder->decoded_video_data_callback = handleVideoCallback;
+            audioPlayer = [[ZZAudioPlayer alloc]initWithAudioSamplate:playerDecoder->samplerate numChannel:playerDecoder->nb_channel format:kAudioFormatFlagIsSignedInteger isInterleaved:YES];
+            audioPlayer.delegate = self;
+            
+            
+            ffmpeg_videooutput_init();
+            
+            dispatch_async(dispatch_get_main_queue(), ^{
+                float   vheight = playerDecoder->height;
+                CGFloat rate = playerDecoder->width/vheight;
+                CGFloat height = [UIScreen mainScreen].bounds.size.width/rate;
+                playView = [[ZZVideoPlayerView alloc]initWithFrame:CGRectMake(0, 200, [UIScreen mainScreen].bounds.size.width, height)];
+                if (self.playStateCallBack) {
+                    
+                    self.playStateCallBack(kffmpegPrepareToPlay);
+                }
+                
+            });
+            
+        }
         
 
-        ffmpeg_videooutput_init();
-        float   vheight = playerDecoder->height;
-        CGFloat rate = playerDecoder->width/vheight;
-        CGFloat height = [UIScreen mainScreen].bounds.size.width/rate;
-        dispatch_async(dispatch_get_main_queue(), ^{
-            playView = [[ZZVideoPlayerView alloc]initWithFrame:CGRectMake(0, 200, [UIScreen mainScreen].bounds.size.width, height)];
-            if (self.playStateCallBack) {
-                
-                self.playStateCallBack(kffmpegPrepareToPlay);
-            }
-
-        });
 
     });
     
