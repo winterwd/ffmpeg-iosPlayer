@@ -31,14 +31,7 @@ int packet_queue_put(ffmpegPacketQueue *q, AVPacket *pkt)
     pkt1->next = NULL;
     
     pthread_mutex_lock(&q->mute_lock);
-    
-//    while (q->nb_packets>50) {
-//        printf("queue has 50 items , wait..   \n");
-//        pthread_cond_wait(&q->cond_lock, &q->mute_lock);
-//        
-//        
-//    }
-    
+
     if (!q->last)	//刚开始若队列q为空，则q->first_pkt=q->last_pkt
         q->first = pkt1;
     else	//插入队列，从尾部插入

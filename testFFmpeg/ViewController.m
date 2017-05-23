@@ -10,6 +10,9 @@
 #include "ffmpegDecoder.h"
 #include "pthreadTest.h"
 #import "ZZFFmpegPlayer.h"
+
+#define SCREEN_WIDT [UIScreen mainScreen].bounds.size.width
+#define SCREEN_HEIGHT [UIScreen mainScreen].bounds.size.height
 @interface ViewController ()
 {
     ZZFFmpegPlayer *player;
@@ -50,8 +53,28 @@
 - (IBAction)audioQueuePause:(UIButton *)sender {
     [player pause];
 }
-- (IBAction)audioQueueStop:(id)sender {
-    [player stop];
+- (IBAction)audioQueueStop:(UIButton *)sender {
+//    [player stop];
+    
+    UIView *view =[player playerView];
+     sender.selected = !sender.selected;
+    if (sender.selected) {
+        view.transform = CGAffineTransformMakeRotation(M_PI_2);
+        view.frame = CGRectMake(0,0 , SCREEN_WIDT, SCREEN_HEIGHT*0.75);
+//        
+//        ;
+        
+    }else{
+        view.transform = CGAffineTransformIdentity;
+        view.frame = CGRectMake(0, 200, SCREEN_WIDT, SCREEN_WIDT/1.33);
+        
+    }
+   
+    
+
+    
+    
+    
 }
 
 
@@ -93,13 +116,13 @@
 - (void)testFFmpeg
 {
     
-    NSString *infileName = @"/Users/xiaowoniu/Documents/一些素材/test.flv";
+//    NSString *infileName = @"/Users/xiaowoniu/Documents/一些素材/test.flv";
     ///Users/xiaowoniu/Downloads/13.mp4
     ///Users/smart/Desktop/未命名文件夹/output.mp4
-//    NSString *infileName = @"/Users/smart/Documents/temp/qianxun/qianxun7.flv";
+//    NSString *infileName = @"/Users/smart/Documents/temp/qianxun/qianxun8.flv";
 //    NSString *infileName = @"/Users/smart/Desktop/未命名文件夹/output1.mp4";
 //    NSString *outFileName = @"/Users/smart/Documents/temp/test.pcm";
-//    NSString *infileName = @"http://bobolive.nosdn.127.net/bobo_1477399116609_39807374.mp4";
+    NSString *infileName = @"http://bobolive.nosdn.127.net/bobo_1477399116609_39807374.mp4";
     
     player = [[ZZFFmpegPlayer alloc]init];
     [player openFile:infileName];

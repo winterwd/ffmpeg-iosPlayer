@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2A1E62C91ED4276E00BFC0AD /* zz_controller.c in Sources */ = {isa = PBXBuildFile; fileRef = 2A1E62C71ED4276E00BFC0AD /* zz_controller.c */; };
+		2A1E62CC1ED4284400BFC0AD /* zz_decoder.c in Sources */ = {isa = PBXBuildFile; fileRef = 2A1E62CA1ED4284400BFC0AD /* zz_decoder.c */; };
+		2A1E62CF1ED43B8B00BFC0AD /* zz_buffer.c in Sources */ = {isa = PBXBuildFile; fileRef = 2A1E62CD1ED43B8B00BFC0AD /* zz_buffer.c */; };
+		2A1E62D21ED457B900BFC0AD /* zz_queue.c in Sources */ = {isa = PBXBuildFile; fileRef = 2A1E62D01ED457B900BFC0AD /* zz_queue.c */; };
 		7B074A4B1D7720A0006A7CF7 /* ZZAudioPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 7B074A451D7720A0006A7CF7 /* ZZAudioPlayer.m */; };
 		7B074A4C1D7720A0006A7CF7 /* ZZVideoPlayerView.m in Sources */ = {isa = PBXBuildFile; fileRef = 7B074A481D7720A0006A7CF7 /* ZZVideoPlayerView.m */; };
 		7B074A501D7722D9006A7CF7 /* ZZFFmpegPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 7B074A4F1D7722D9006A7CF7 /* ZZFFmpegPlayer.m */; };
@@ -60,6 +64,14 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		2A1E62C71ED4276E00BFC0AD /* zz_controller.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = zz_controller.c; sourceTree = "<group>"; };
+		2A1E62C81ED4276E00BFC0AD /* zz_controller.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = zz_controller.h; sourceTree = "<group>"; };
+		2A1E62CA1ED4284400BFC0AD /* zz_decoder.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = zz_decoder.c; sourceTree = "<group>"; };
+		2A1E62CB1ED4284400BFC0AD /* zz_decoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = zz_decoder.h; sourceTree = "<group>"; };
+		2A1E62CD1ED43B8B00BFC0AD /* zz_buffer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = zz_buffer.c; sourceTree = "<group>"; };
+		2A1E62CE1ED43B8B00BFC0AD /* zz_buffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = zz_buffer.h; sourceTree = "<group>"; };
+		2A1E62D01ED457B900BFC0AD /* zz_queue.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = zz_queue.c; sourceTree = "<group>"; };
+		2A1E62D11ED457B900BFC0AD /* zz_queue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = zz_queue.h; sourceTree = "<group>"; };
 		7B074A441D7720A0006A7CF7 /* ZZAudioPlayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZZAudioPlayer.h; sourceTree = "<group>"; };
 		7B074A451D7720A0006A7CF7 /* ZZAudioPlayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZZAudioPlayer.m; sourceTree = "<group>"; };
 		7B074A471D7720A0006A7CF7 /* ZZVideoPlayerView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZZVideoPlayerView.h; sourceTree = "<group>"; };
@@ -276,6 +288,21 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		2A1E62C61ED4272500BFC0AD /* MediaCore */ = {
+			isa = PBXGroup;
+			children = (
+				2A1E62C71ED4276E00BFC0AD /* zz_controller.c */,
+				2A1E62C81ED4276E00BFC0AD /* zz_controller.h */,
+				2A1E62CA1ED4284400BFC0AD /* zz_decoder.c */,
+				2A1E62CB1ED4284400BFC0AD /* zz_decoder.h */,
+				2A1E62CD1ED43B8B00BFC0AD /* zz_buffer.c */,
+				2A1E62CE1ED43B8B00BFC0AD /* zz_buffer.h */,
+				2A1E62D01ED457B900BFC0AD /* zz_queue.c */,
+				2A1E62D11ED457B900BFC0AD /* zz_queue.h */,
+			);
+			path = MediaCore;
+			sourceTree = "<group>";
+		};
 		7B074A421D77207B006A7CF7 /* player */ = {
 			isa = PBXGroup;
 			children = (
@@ -348,6 +375,7 @@
 		7B46310A18D1F09D009C5B3A /* testFFmpeg */ = {
 			isa = PBXGroup;
 			children = (
+				2A1E62C61ED4272500BFC0AD /* MediaCore */,
 				7B074A421D77207B006A7CF7 /* player */,
 				7BE22D451D733AD30007B9EF /* fdk-aac */,
 				7BE22D581D733AD40007B9EF /* FFmpeg-iOS-2.7.7 */,
@@ -794,13 +822,17 @@
 			files = (
 				7B224E9F1D6F498F00DD0BDD /* ffmpegDecoder.c in Sources */,
 				7B074A4C1D7720A0006A7CF7 /* ZZVideoPlayerView.m in Sources */,
+				2A1E62C91ED4276E00BFC0AD /* zz_controller.c in Sources */,
 				7B4631AC18D213DA009C5B3A /* DecodeMovie.m in Sources */,
 				7B46311B18D1F09D009C5B3A /* ViewController.m in Sources */,
+				2A1E62D21ED457B900BFC0AD /* zz_queue.c in Sources */,
+				2A1E62CF1ED43B8B00BFC0AD /* zz_buffer.c in Sources */,
 				7B46311518D1F09D009C5B3A /* AppDelegate.m in Sources */,
 				7BE22D331D70819B0007B9EF /* ffmpegPacketQueue.c in Sources */,
 				7BE22D441D72CA0B0007B9EF /* pthreadTest.c in Sources */,
 				7B074A501D7722D9006A7CF7 /* ZZFFmpegPlayer.m in Sources */,
 				7B46311118D1F09D009C5B3A /* main.m in Sources */,
+				2A1E62CC1ED4284400BFC0AD /* zz_decoder.c in Sources */,
 				7B074A4B1D7720A0006A7CF7 /* ZZAudioPlayer.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
