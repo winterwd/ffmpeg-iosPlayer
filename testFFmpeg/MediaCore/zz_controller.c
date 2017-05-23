@@ -37,7 +37,10 @@ static void *zz_controller_event_loop(void *argc) {
 }
 
 static void *zz_controller_decode_loop(void *argc) {
-    
+    zz_controller *c = (zz_controller *)argc;
+    for(;;){
+        
+    }
     return NULL;
 }
 
@@ -62,17 +65,26 @@ void zz_controller_init(zz_controller *controller) {
     
 }
 
-void    zz_controller_free(zz_controller *controller);
+void zz_controller_free(zz_controller *controller);
 
-void    zz_controller_destroy(zz_controller *controller);
+void zz_controller_destroy(zz_controller *controller);
 
-void    zz_controller_open(zz_controller *controller,const char *path);
+void zz_controller_open(zz_controller *controller,const char *path) {
+    zz_command *cmd = zz_command_alloc(ZZ_COMMAND_OPEN, (void *)path);
+    zz_queue_put(controller->commandQueue, cmd);
+}
 
-void    zz_controller_close(zz_controller *controller);
+void zz_controller_close(zz_controller *controller) {
+    zz_command *cmd = zz_command_alloc(ZZ_COMMAND_CLOSE, NULL);
+    zz_queue_put(controller->commandQueue, cmd);
+}
 
-void    zz_controller_play(zz_controller *controller);
+void zz_controller_play(zz_controller *controller) {
+    zz_command *cmd = zz_command_alloc(ZZ_COMMAND_PLAY, NULL);
+    zz_queue_put(controller->commandQueue, cmd);
+}
 
-void    zz_controller_pause(zz_controller *controller);
+void zz_controller_pause(zz_controller *controller);
 
 void    zz_controller_resume(zz_controller *controller);
 
