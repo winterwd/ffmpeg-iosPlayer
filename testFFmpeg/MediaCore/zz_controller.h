@@ -33,7 +33,7 @@ typedef  struct zz_controller_s {
     int bufferSize;
     int abortRequest;
     pthread_t eventThreadId;
-    pthread_t decodeThreadId;
+    
     int64_t timeStamp;
     zz_queue *commandQueue;
 }zz_controller;

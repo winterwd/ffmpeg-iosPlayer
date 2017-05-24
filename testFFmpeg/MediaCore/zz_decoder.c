@@ -38,6 +38,15 @@ static void zz_decode_free(zz_decoder *decoder) {
     }
 }
 
+void *zz_decode_loop(void *argc){
+    
+    zz_decode_ctx *ctx = argc;
+    while (1) {
+        zz_decode_context_read_packet(ctx);
+    }
+    return NULL;
+}
+
 static zz_decoder * zz_decoder_alloc(AVFormatContext *fctx,enum AVMediaType type){
     if (type == AVMEDIA_TYPE_UNKNOWN) {
         return NULL;
@@ -193,7 +202,7 @@ int zz_decode_context_open(zz_decode_ctx *decode_ctx,const char *path){
         }
     }
     
-    
+    pthread_create(&decode_ctx->decodeThreadId, NULL, zz_decode_loop, decode_ctx);
     
 error_exit:
     zz_decode_context_destroy(decode_ctx);
@@ -230,16 +239,3 @@ int zz_decode_context_read_packet(zz_decode_ctx *decode_ctx){
     return ret;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-#pragma mark ---

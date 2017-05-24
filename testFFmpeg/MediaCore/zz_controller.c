@@ -36,13 +36,13 @@ static void *zz_controller_event_loop(void *argc) {
     return NULL;
 }
 
-static void *zz_controller_decode_loop(void *argc) {
-    zz_controller *c = (zz_controller *)argc;
-    for(;;){
-        
-    }
-    return NULL;
-}
+//static void *zz_controller_decode_loop(void *argc) {
+//    zz_controller *c = (zz_controller *)argc;
+//    for(;;){
+//        
+//    }
+//    return NULL;
+//}
 
 zz_controller * zz_controller_alloc(int buffersize) {
     
@@ -61,7 +61,7 @@ void zz_controller_init(zz_controller *controller) {
     }
     controller->commandQueue = zz_queue_alloc(8, NULL);
     pthread_create(&controller->eventThreadId, NULL, zz_controller_event_loop, controller);
-    pthread_create(&controller->decodeThreadId, NULL, zz_controller_decode_loop, controller);
+
     
 }
 

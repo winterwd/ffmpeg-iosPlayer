@@ -44,7 +44,7 @@ typedef struct zz_decode_context_s{
     int         buffer_size;
     int         decode_status;
     uint8_t     abort_req; ///<处理中断请求
-    
+    pthread_t decodeThreadId;
     pthread_mutex_t decode_lock;
     pthread_cond_t  decode_cond;
 }zz_decode_ctx;
