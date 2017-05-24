@@ -72,6 +72,7 @@
 		2A1E62CE1ED43B8B00BFC0AD /* zz_buffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = zz_buffer.h; sourceTree = "<group>"; };
 		2A1E62D01ED457B900BFC0AD /* zz_queue.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = zz_queue.c; sourceTree = "<group>"; };
 		2A1E62D11ED457B900BFC0AD /* zz_queue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = zz_queue.h; sourceTree = "<group>"; };
+		2A1E62D31ED5B02000BFC0AD /* zz_define.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = zz_define.h; sourceTree = "<group>"; };
 		7B074A441D7720A0006A7CF7 /* ZZAudioPlayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZZAudioPlayer.h; sourceTree = "<group>"; };
 		7B074A451D7720A0006A7CF7 /* ZZAudioPlayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZZAudioPlayer.m; sourceTree = "<group>"; };
 		7B074A471D7720A0006A7CF7 /* ZZVideoPlayerView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZZVideoPlayerView.h; sourceTree = "<group>"; };
@@ -299,6 +300,7 @@
 				2A1E62CE1ED43B8B00BFC0AD /* zz_buffer.h */,
 				2A1E62D01ED457B900BFC0AD /* zz_queue.c */,
 				2A1E62D11ED457B900BFC0AD /* zz_queue.h */,
+				2A1E62D31ED5B02000BFC0AD /* zz_define.h */,
 			);
 			path = MediaCore;
 			sourceTree = "<group>";

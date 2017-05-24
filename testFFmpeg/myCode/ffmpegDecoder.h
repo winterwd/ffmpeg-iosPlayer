@@ -48,7 +48,7 @@ typedef struct {
 
     
     //video
-    struct SwsContext *sws;
+    struct SwsContext *sws; //图像格式转换上下文
     int    video_buffer_size;
     int    width;
     int    height;

@@ -86,6 +86,7 @@ void * decrement_count(void *argc)
     }
     printf("decrement_count thread end .....\n");
     
+    
     return NULL;
 }
 
@@ -94,17 +95,19 @@ int thread_main()
 {
     
     int test = 100;
-    pthread_create(&thread1, NULL, increment_count, &test);
-    pthread_create(&thread2, NULL, decrement_count, &test);
-
     
     pthread_mutex_init(&mutex, NULL);
     pthread_cond_init(&cond, 0);
-    
-    
-    
+
+    pthread_create(&thread1, NULL, increment_count, &test);
+    pthread_create(&thread2, NULL, decrement_count, &test);
+
+
     pthread_join(thread1, NULL);
     pthread_join(thread2, NULL);
+    
+    pthread_mutex_destroy(&mutex);
+    pthread_cond_destroy(&cond);
     
     printf("\n thread_main  done \n");
     return 1;
