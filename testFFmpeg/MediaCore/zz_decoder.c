@@ -9,6 +9,25 @@
 #include "zz_decoder.h"
 
 
+static void *convert_audio_frame(zz_decoder *decoder,AVFrame *srcFrame){
+ 
+    uint8_t *data;
+    int buffer_size = av_samples_get_buffer_size(srcFrame->linesize, decoder->codec_ctx->channels, srcFrame->nb_samples, AV_SAMPLE_FMT_S16, 1);
+    data = malloc(buffer_size);
+    if (decoder->swr != NULL) {
+        int ret = 0;
+        ret = swr_convert(
+                      decoder->swr,
+                      (uint8_t **)&data,
+                      srcFrame->nb_samples,
+                      (const uint8_t **) srcFrame->data,
+                      srcFrame->nb_samples);
+    }else{
+        memcpy(data, srcFrame->data[0], buffer_size);
+    }
+    return data;
+}
+
 static void zz_decode_free(zz_decoder *decoder) {
     if (decoder) {
         if (decoder->buffer_queue) {
@@ -38,10 +57,39 @@ static zz_decoder * zz_decoder_alloc(AVFormatContext *fctx,enum AVMediaType type
         goto error_exit;
     }
     switch (type) {
-        case AVMEDIA_TYPE_AUDIO:
-            decoder->sws = NULL;
+        case AVMEDIA_TYPE_AUDIO:{
             
+            if (decoder->codec_ctx->sample_fmt != AV_SAMPLE_FMT_S16) {
+                // to  AV_SAMPLE_FMT_S16  2 chanels
+                SwrContext *swrctx = swr_alloc();
+                
+                
+                int64_t out_ch_layout = AV_CH_LAYOUT_STEREO;
+                enum AVSampleFormat out_sample_fmt = AV_SAMPLE_FMT_S16;
+                int out_sample_rate = decoder->codec_ctx->sample_rate;
+                
+                int64_t in_ch_layout = decoder->codec_ctx->channel_layout;
+                enum AVSampleFormat in_sample_fmt = decoder->codec_ctx->sample_fmt;
+                int in_sample_rate = decoder->codec_ctx->sample_rate;
+                
+                swr_alloc_set_opts(swrctx, out_ch_layout, out_sample_fmt, out_sample_rate, in_ch_layout, in_sample_fmt, in_sample_rate, 0, NULL);
+                
+                swr_init(swrctx);
+                
+                decoder->swr = swrctx;
+            }
+
+            
+//            decoder->audio_buffer_size = av_samples_get_buffer_size(NULL, decoder->pAcodectx->channels, decoder->pAcodectx->frame_size, out_sample_fmt, 0);
+//            decoder->samplerate = out_sample_rate;
+//            decoder->nb_channel = decoder->pAcodectx->channels;
+//            
+//            //每秒的音频数据大小
+//            decoder->byte_per_seconds = decoder->nb_channel*decoder->samplerate*2;
+//            decoder->swr = swrctx;
+            decoder->convert_func = convert_audio_frame;
             break;
+        }
         case AVMEDIA_TYPE_VIDEO:
             decoder->swr = NULL;
             break;
@@ -53,8 +101,13 @@ static zz_decoder * zz_decoder_alloc(AVFormatContext *fctx,enum AVMediaType type
             break;
     }
     
-    if(avcodec_open2(decoder->codec_ctx, decoder->codec, NULL)<0)
+    if(avcodec_open2(decoder->codec_ctx, decoder->codec, NULL)<0){
+        printf("open decode codec error occurs.\n");
         goto error_exit;
+    }
+    
+    decoder->buffer_queue = zz_queue_alloc(10, NULL);
+    
     
     return decoder;
     
@@ -146,4 +199,47 @@ error_exit:
     zz_decode_context_destroy(decode_ctx);
     return 0;
 }
-int zz_decode_context_read_packet(zz_decode_ctx *decode);
+int zz_decode_context_read_packet(zz_decode_ctx *decode_ctx){
+    int ret = 0;
+    ret = av_read_frame(decode_ctx->format_ctx, &decode_ctx->packet);
+    if (ret<0) {
+        printf("read packet error occurs.\n");
+        return -2;
+    }
+    int size = decode_ctx->packet.size;
+    while (size>0) {
+        int gotframe = 0;
+        zz_decoder *decoder =  NULL;
+        if (decode_ctx->packet.stream_index == decode_ctx->audio_st_index) {
+            if (decoder->decode_func) {
+                decoder->decode_func(decoder->codec_ctx,decode_ctx->frame,&gotframe,&decode_ctx->packet);
+                if (gotframe) {
+                    if (decoder->convert_func) {
+                        void *data = decoder->convert_func(decoder,decode_ctx->frame);
+                        zz_queue_put(decoder->buffer_queue, data);
+                    }
+                }
+            }
+        }else if (decode_ctx->packet.stream_index == decode_ctx->video_st_index){
+            
+        }else{
+            break;
+        }
+        
+    }
+    return ret;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+#pragma mark ---

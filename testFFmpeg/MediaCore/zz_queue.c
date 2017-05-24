@@ -83,7 +83,7 @@ void zz_queue_put(zz_queue *queue,void *data){
         return;
     }
     
-    if (queue->size > queue->capacity) {
+    if (queue->size >= queue->capacity) {
         pthread_mutex_unlock(&queue->lock);
         queue->callbackFunc(zz_queue_pop(queue));
     }

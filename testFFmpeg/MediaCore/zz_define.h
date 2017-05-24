@@ -17,6 +17,15 @@
 #include <pthread.h>
 #include "zz_queue.h"
 
+
+
+
+
+
+typedef struct zz_config_s {
+
+}zz_config;
+
 typedef struct zz_decode_frame_s {
     int type;
     uint64_t timebase;
@@ -24,14 +33,17 @@ typedef struct zz_decode_frame_s {
 }zz_decode_frame;
 
 typedef struct zz_audio_frame_s{
-    int channel,samplerate,byte_per_second,fmt;
+    int channels,samplerate,byte_per_second,nbsamples,size;
+    enum AVSampleFormat format;
     uint8_t *data;
+    uint8_t **extentData;
     uint64_t timebase;
 }zz_audio_frame;
 
 
 typedef struct zz_video_frame_s {
     int width,height;
+    int keyframe;
     uint64_t timebase;
     uint8_t *data;
 }zz_video_frame;

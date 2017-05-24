@@ -11,15 +11,26 @@
 
 #include "zz_define.h"
 
+typedef struct zz_decoder_s zz_decoder;
+
+
+typedef int (zz_decode_func)(AVCodecContext *avctx, AVFrame *frame,int *gotframe, const AVPacket *avpkt);
+
+typedef void *(zz_convert_frame_func)(zz_decoder *decoder,AVFrame *srcFrame);
+
+
 typedef struct zz_decoder_s {
     
-    zz_queue *buffer_queue;
+    zz_queue        *buffer_queue;
     AVCodecContext  *codec_ctx;
     AVCodec         *codec;
     AVStream        *stream;
     SwrContext      *swr; //音频格式转换
     struct SwsContext *sws; //图像格式转换上下文
-   
+    
+    zz_decode_func          *decode_func;
+    zz_convert_frame_func   *convert_func;
+    
 }zz_decoder;
 
 
