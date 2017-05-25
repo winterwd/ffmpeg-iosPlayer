@@ -128,7 +128,8 @@ int ffmpeg_decoder_open_file(ffmpegDecoder *decoder,const char *path) {
     enum AVSampleFormat in_sample_fmt = decoder->pAcodectx->sample_fmt;
     int in_sample_rate = decoder->pAcodectx->sample_rate;
     
-    swr_alloc_set_opts(swrctx, out_ch_layout, out_sample_fmt, out_sample_rate, in_ch_layout, in_sample_fmt, in_sample_rate, 0, NULL);
+    swr_alloc_set_opts(swrctx, out_ch_layout, out_sample_fmt, out_sample_rate,
+                       in_ch_layout, in_sample_fmt, in_sample_rate, 0, NULL);
     
     swr_init(swrctx);
 
@@ -165,7 +166,13 @@ int ffmpeg_decoder_open_file(ffmpegDecoder *decoder,const char *path) {
     
     
     
-    decoder->sws = sws_getContext(decoder->width, decoder->height, decoder->pVcodectx->pix_fmt, decoder->width, decoder->height, PIX_FMT_YUV420P, SWS_BILINEAR, NULL, NULL, NULL);
+    decoder->sws = sws_getContext(decoder->width,
+                                  decoder->height,
+                                  decoder->pVcodectx->pix_fmt,
+                                  decoder->width,
+                                  decoder->height,
+                                  PIX_FMT_YUV420P,
+                                  SWS_BILINEAR, NULL, NULL, NULL);
     
     return 1;
     

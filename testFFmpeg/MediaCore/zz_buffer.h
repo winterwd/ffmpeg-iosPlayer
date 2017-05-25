@@ -33,5 +33,4 @@ void        zz_buffer_free(zz_buffer *zb);
 
 
 
-
 #endif /* zz_buffer_h */

@@ -24,6 +24,7 @@ static zz_node * zz_node_alloc(void *data) {
 }
 
 static void zz_node_free(zz_node *node){
+    printf("node free \n");
     free(node);
 }
 
@@ -44,15 +45,15 @@ static void zz_queue_node_free(zz_node *node,zz_node_free_callback *callback) {
 
 zz_queue * zz_queue_alloc(int capacity,zz_node_free_callback *callback) {
     
-    zz_queue *quque = malloc(sizeof(zz_queue));
-    memset(quque,0,sizeof(zz_queue));
-    quque->capacity = capacity;
-    quque->first = NULL;
-    quque->last = NULL;
-    quque->size = 0;
-    quque->callbackFunc = callback != NULL ? callback : zz_queue_default_free_callback;
-    pthread_mutex_init(&quque->lock, NULL);
-    return quque;
+    zz_queue *q = malloc(sizeof(zz_queue));
+    memset(q,0,sizeof(zz_queue));
+    q->capacity = capacity;
+    q->first = NULL;
+    q->last = NULL;
+    q->size = 0;
+    q->callbackFunc = (callback != NULL) ? callback : zz_queue_default_free_callback;
+    pthread_mutex_init(&q->lock, NULL);
+    return q;
 }
 
 void zz_queue_put(zz_queue *queue,void *data){
@@ -78,16 +79,22 @@ void zz_queue_put(zz_queue *queue,void *data){
     }
     queue->size += 1;
     
+     printf("queue size is %d \n",queue->size);
     if (queue->capacity == -1) {
-        pthread_mutex_unlock(&queue->lock);
-        return;
+        goto exit_1;
     }
     
     if (queue->size > queue->capacity) {
         pthread_mutex_unlock(&queue->lock);
         queue->callbackFunc(zz_queue_pop(queue));
+        goto exit_0;
     }
+exit_1:
+    pthread_mutex_unlock(&queue->lock);
+exit_0:
+    
     return;
+
 }
 
 void * zz_queue_pop(zz_queue *queue) {
@@ -117,9 +124,18 @@ void * zz_queue_pop(zz_queue *queue) {
     data = node->data;
     zz_node_free(node);
     queue->size -= 1;
+    
 exit:
     pthread_mutex_unlock(&queue->lock);
     return data;
+}
+
+unsigned int zz_queue_size(zz_queue *queue){
+    unsigned int len = 0;
+    pthread_mutex_lock(&queue->lock);
+    len = queue->size;
+    pthread_mutex_unlock(&queue->lock);
+    return len;
 }
 
 void zz_quque_free(zz_queue *queue) {

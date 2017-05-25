@@ -11,15 +11,28 @@
 
 #include "zz_define.h"
 
+typedef struct zz_decoder_s zz_decoder;
+
+
+typedef int (zz_decode_func)(AVCodecContext *avctx, AVFrame *frame,int *gotframe, const AVPacket *avpkt);
+
+typedef void *(zz_convert_frame_func)(zz_decoder *decoder,AVFrame *srcFrame);
+
+
 typedef struct zz_decoder_s {
     
-    zz_queue *buffer_queue;
+    zz_queue        *buffer_queue;
     AVCodecContext  *codec_ctx;
     AVCodec         *codec;
     AVStream        *stream;
     SwrContext      *swr; //音频格式转换
     struct SwsContext *sws; //图像格式转换上下文
-   
+    
+    zz_decode_func          *decode_func;
+    zz_convert_frame_func   *convert_func;
+    
+//    AVFrame         *picture;//用于视频解码的
+    
 }zz_decoder;
 
 
@@ -33,7 +46,7 @@ typedef struct zz_decode_context_s{
     int         buffer_size;
     int         decode_status;
     uint8_t     abort_req; ///<处理中断请求
-    
+    pthread_t decodeThreadId;
     pthread_mutex_t decode_lock;
     pthread_cond_t  decode_cond;
 }zz_decode_ctx;
@@ -41,7 +54,8 @@ typedef struct zz_decode_context_s{
 
 zz_decode_ctx * zz_decode_context_alloc(int buffersize);
 int zz_decode_context_open(zz_decode_ctx *decode_ctx,const char *path);
+void zz_decode_context_start(zz_decode_ctx *decode_ctx);
 int zz_decode_context_read_packet(zz_decode_ctx *decode);
-
-
+void * zz_decode_context_get_audio_buffer(zz_decode_ctx *decode_ctx);
+void * zz_decode_context_get_video_buffer(zz_decode_ctx *decode_ctx);
 #endif /* zz_decoder_h */

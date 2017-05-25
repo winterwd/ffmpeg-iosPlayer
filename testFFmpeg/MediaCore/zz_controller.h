@@ -10,9 +10,8 @@
 #define zz_controller_h
 
 #include <stdio.h>
-#include "zz_queue.h"
-#include <pthread.h>
-
+#include "zz_define.h"
+#include "zz_decoder.h"
 typedef enum {
     ZZ_COMMAND_DESTROY,
     ZZ_COMMAND_OPEN,
@@ -22,7 +21,8 @@ typedef enum {
     ZZ_COMMAND_RECEIVE_VIDEO,
 }ZZ_COMMAND_TYPE;
 
-
+typedef void (statusCallback)(void *userData,int status);
+typedef void (videoOutRenderCallback)(void *userData,void *frame);
 typedef struct zz_command_s {
     ZZ_COMMAND_TYPE type;
     void *data;
@@ -32,14 +32,19 @@ typedef  struct zz_controller_s {
     int status;
     int bufferSize;
     int abortRequest;
+    char urlPath[1024];
     pthread_t eventThreadId;
-    pthread_t decodeThreadId;
+    
     int64_t timeStamp;
     zz_queue *commandQueue;
+    zz_decode_ctx *decodeCtx;
+    void          *opaque;
+    statusCallback  *statusCallback;
+    videoOutRenderCallback *renderCallBack;
 }zz_controller;
 
 
-zz_controller * zz_controller_alloc(int buffersize);
+zz_controller * zz_controller_alloc(int buffersize,void *userData,statusCallback *callback);
 
 void    zz_controller_init(zz_controller *controller);
 
@@ -70,6 +75,8 @@ double  zz_controller_get_duration(zz_controller *controller);
 double  zz_controller_get_cur_time(zz_controller *controller);
 
 
+//set method
+void zz_controller_set_render_func(zz_controller *controller,videoOutRenderCallback *rendCallBack);
 
 
 

@@ -32,6 +32,6 @@ zz_queue * zz_queue_alloc(int capacity,zz_node_free_callback *callback);
 void zz_queue_put(zz_queue *queue,void *data);
 void * zz_queue_pop(zz_queue *quque);
 void zz_quque_free(zz_queue *quque);
-
+unsigned int zz_queue_size(zz_queue *queue);
 
 #endif /* zz_queue_h */
