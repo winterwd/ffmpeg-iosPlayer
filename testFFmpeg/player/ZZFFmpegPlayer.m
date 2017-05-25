@@ -30,8 +30,15 @@ static void player_statuse(void *userData,int status){
     ZZFFmpegPlayer *player = (__bridge ZZFFmpegPlayer *)userData;
     if (status == 1) {
         printf("打开成功了 \n");
-        [player play];
+//        [player play];
         
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (player.playStateCallBack) {
+                
+                player.playStateCallBack(kffmpegPrepareToPlay);
+            }
+        });
+       
     }
     
 }
@@ -103,18 +110,12 @@ void handleVideoCallback2(void *userData,void  *data){
     //        playerDecoder->decoded_video_data_callback = handleVideoCallback;
     audioPlayer = [[ZZAudioPlayer alloc]initWithAudioSamplate:44100 numChannel:2 format:kAudioFormatFlagIsSignedInteger isInterleaved:YES];
     audioPlayer.delegate = self;
+    
+    CGFloat height = [UIScreen mainScreen].bounds.size.width*0.75;
+    playView = [[ZZVideoPlayerView alloc]initWithFrame:CGRectMake(0, 200, [UIScreen mainScreen].bounds.size.width, height)];
+    
     ffmpeg_videooutput_init();
     zz_controller_set_render_func(playerController, handleVideoCallback2);
-
-    dispatch_async(dispatch_get_main_queue(), ^{
-//        float   vheight = playerController->decodeCtx->video_decoder->codec_ctx->height;
-        CGFloat rate = 1.333;
-        CGFloat height = [UIScreen mainScreen].bounds.size.width/rate;
-        playView = [[ZZVideoPlayerView alloc]initWithFrame:CGRectMake(0, 200, [UIScreen mainScreen].bounds.size.width, height)];
-        
-        
-    });
-    
     
     
 }
@@ -214,6 +215,11 @@ void handleVideoCallback2(void *userData,void  *data){
 
 - (UIView *)playerView
 {
+    if (!playView) {
+        
+        CGFloat height = [UIScreen mainScreen].bounds.size.width*0.75;
+        playView = [[ZZVideoPlayerView alloc]initWithFrame:CGRectMake(0, 200, [UIScreen mainScreen].bounds.size.width, height)];
+    }
     return playView;
 }
 @end

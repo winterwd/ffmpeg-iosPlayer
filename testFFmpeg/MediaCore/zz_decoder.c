@@ -30,7 +30,7 @@ static zz_audio_frame *convert_audio_frame(zz_decoder *decoder,AVFrame *srcFrame
     return audioFrame;
 }
 
-static void zp_audio_frame_free(void *frame) {
+static void zz_audio_frame_free(void *frame) {
     zz_audio_frame *f = frame;
     if(NULL!=f && NULL!=f->data) {
         free(f->data);
@@ -39,6 +39,12 @@ static void zp_audio_frame_free(void *frame) {
     if(NULL!=f) {
         free(f);
     }
+}
+
+static void zz_video_frame_free(void *frame) {
+    zz_video_frame *f = frame;
+    av_frame_free(&f->frame);
+    free(f);
 }
 
 static zz_video_frame *convert_video_frame(zz_decoder *decoder,AVFrame *srcFrame) {
@@ -79,8 +85,9 @@ void *zz_decode_loop(void *argc){
 //            usleep(100*1000);
 //        }
         pthread_mutex_lock(&decode_ctx->decode_lock);
-        while (zz_queue_size(decode_ctx->audio_decoder->buffer_queue)>=10 /*|| zz_queue_size(decode_ctx->video_decoder->buffer_queue)>=3*/) {
+        while (zz_queue_size(decode_ctx->audio_decoder->buffer_queue)>=140 /*|| zz_queue_size(decode_ctx->video_decoder->buffer_queue)>=3*/) {
             printf("buffer reached 10 items ,wait.... \n");
+            usleep(10*1000);
             pthread_cond_wait(&decode_ctx->decode_cond, &decode_ctx->decode_lock);
         }
         pthread_mutex_unlock(&decode_ctx->decode_lock);
@@ -141,7 +148,7 @@ static zz_decoder * zz_decoder_alloc(AVFormatContext *fctx,enum AVMediaType type
 
             decoder->convert_func = (void *)convert_audio_frame;
             decoder->decode_func = avcodec_decode_audio4;
-            decoder->buffer_queue = zz_queue_alloc(15, zp_audio_frame_free);
+            decoder->buffer_queue = zz_queue_alloc(150, zz_audio_frame_free);
 
             break;
         }
@@ -157,7 +164,7 @@ static zz_decoder * zz_decoder_alloc(AVFormatContext *fctx,enum AVMediaType type
                                               PIX_FMT_YUV420P,
                                               SWS_BILINEAR, NULL, NULL, NULL);
 //            }
-            decoder->buffer_queue = zz_queue_alloc(3, NULL);
+            decoder->buffer_queue = zz_queue_alloc(150, zz_video_frame_free);
             
             break;
         case AVMEDIA_TYPE_SUBTITLE:
@@ -304,8 +311,8 @@ int zz_decode_context_read_packet(zz_decode_ctx *decode_ctx){
         
     }else if (packet.stream_index == decode_ctx->video_st_index){
         decoder = decode_ctx->video_decoder;
-        usleep(10*1000);
-        return -1;
+//        usleep(10*1000);
+//        return -1;
     }else{
         return -1;
     }
@@ -342,7 +349,6 @@ int zz_decode_context_read_packet(zz_decode_ctx *decode_ctx){
         
     }
     
-
     av_free_packet(&packet);
     
 
@@ -354,7 +360,7 @@ void * zz_decode_context_get_audio_buffer(zz_decode_ctx *decode_ctx){
     void *data = zz_queue_pop(decode_ctx->audio_decoder->buffer_queue);
     
     pthread_mutex_lock(&decode_ctx->decode_lock);
-    if (zz_queue_size(decode_ctx->audio_decoder->buffer_queue) <= 5) {
+    if (zz_queue_size(decode_ctx->audio_decoder->buffer_queue) <= 100) {
         printf("audio buffer decrease to 5 items, start read...\n");
         pthread_cond_signal(&decode_ctx->decode_cond);
 
@@ -366,14 +372,18 @@ void * zz_decode_context_get_audio_buffer(zz_decode_ctx *decode_ctx){
 
 void * zz_decode_context_get_video_buffer(zz_decode_ctx *decode_ctx){
     
+   
+    
     void *data = zz_queue_pop(decode_ctx->video_decoder->buffer_queue);
     
-    pthread_mutex_lock(&decode_ctx->decode_lock);
-    if (zz_queue_size(decode_ctx->video_decoder->buffer_queue) <= 2) {
-        printf("video buffer decrease to 5 items, start read...\n");
-        pthread_cond_signal(&decode_ctx->decode_cond);
-        
-    }
-    pthread_mutex_unlock(&decode_ctx->decode_lock);
+//    
+//    pthread_mutex_lock(&decode_ctx->decode_lock);
+//    if (zz_queue_size(decode_ctx->video_decoder->buffer_queue) <= 2) {
+//        printf("video buffer decrease to 5 items, start read...\n");
+//        pthread_cond_signal(&decode_ctx->decode_cond);
+//        
+//    }
+//    pthread_mutex_unlock(&decode_ctx->decode_lock);
+    
     return data;
 }

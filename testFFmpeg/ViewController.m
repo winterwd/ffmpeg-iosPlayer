@@ -116,8 +116,8 @@
 - (void)testFFmpeg
 {
     
-//    NSString *infileName = @"/Users/xiaowoniu/Documents/一些素材/test.flv";
-    NSString *infileName = @"/Users/smart/Documents/temp/test.flv";
+    NSString *infileName = @"/Users/xiaowoniu/Documents/一些素材/test.flv";
+//    NSString *infileName = @"/Users/smart/Documents/temp/test.flv";
     //Users/xiaowoniu/Downloads/13.mp4
     //Users/smart/Desktop/未命名文件夹/output.mp4
 //    NSString *infileName = @"/Users/smart/Documents/temp/qianxun/qianxun8.flv";

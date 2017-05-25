@@ -35,27 +35,37 @@ static void *zz_controller_event_loop(void *argc) {
                 int ret = zz_decode_context_open(c->decodeCtx, path);
                 zz_decode_context_start(c->decodeCtx);
                 c->statusCallback(c->opaque,ret);
+                
+                c->status = 1;
             }else if (cmd->type == ZZ_COMMAND_DESTROY){
                 break;
             }
         }else{
             
-            usleep(10*1000);
-            /*
-
-            if (c->renderCallBack) {
-                zz_video_frame *frame = zz_decode_context_get_video_buffer(c->decodeCtx);
-                if (frame!= NULL) {
-                    c->renderCallBack(c->opaque,frame);
-                    int seconds = (1/frame->fps)*AV_TIME_BASE;
-                    printf("seconds = %d \n",seconds);
-                    usleep(seconds);
-                    av_frame_free(&frame->frame);
-                    free(frame);
-                }
+//            usleep(10*1000);
+            if (c->status<1) {
+                usleep(10*1000);
                 
+            }else{
+                if (c->renderCallBack ) {
+                    zz_video_frame *frame = zz_decode_context_get_video_buffer(c->decodeCtx);
+                    if (frame!= NULL) {
+                        c->renderCallBack(c->opaque,frame);
+                        int seconds = (1/frame->fps)*AV_TIME_BASE;
+                        printf("seconds = %d \n",seconds);
+                        usleep(seconds);
+                        avpicture_free((AVPicture*)frame->frame);
+                        free(frame);
+                    }
+                    
+                }
             }
-             */
+            
+
+            
+            
+
+             
             
         }
     }
@@ -82,7 +92,7 @@ void zz_controller_init(zz_controller *controller) {
         return;
     }
     controller->commandQueue = zz_queue_alloc(8, NULL);
-    
+    controller->status = 0;
     pthread_create(&controller->eventThreadId, NULL, zz_controller_event_loop, controller);
 }
 
