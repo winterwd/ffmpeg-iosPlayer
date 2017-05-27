@@ -18,6 +18,7 @@ typedef int (zz_decode_func)(AVCodecContext *avctx, AVFrame *frame,int *gotframe
 
 typedef void *(zz_convert_frame_func)(zz_decoder *decoder,AVFrame *srcFrame);
 
+typedef void (zz_video_render_callback)(void *opaque,void *frame);
 
 typedef struct zz_decoder_s {
     
@@ -31,7 +32,7 @@ typedef struct zz_decoder_s {
     zz_decode_func          *decode_func;
     zz_convert_frame_func   *convert_func;
     
-//    AVFrame         *picture;//用于视频解码的
+    
     
 }zz_decoder;
 
@@ -42,14 +43,32 @@ typedef struct zz_decode_context_s{
     zz_decoder *video_decoder,*audio_decoder,*subtitle_decoder;
     AVPacket   packet;  ///<保存读取到的包
     AVFrame    *frame;  ///<保存单次解码后的frame
-    zz_queue   *frame_queue; ///<保存解码后的frame数据
+
+    int         audioBytePerSecond;
+    
+    int64_t      duration;
+    int64_t      audioTimestamp;
+    int64_t      videoTimestamp;
+    
     int         buffer_size;
     int         decode_status;
     uint8_t     abort_req; ///<处理中断请求
-    pthread_t decodeThreadId;
+    pthread_t   decodeThreadId;  //解码线程
+    pthread_t   videoThreadId;    //视频线程
     pthread_mutex_t decode_lock;
     pthread_cond_t  decode_cond;
+    
+    
+    void *opaque;
+    
+    zz_video_render_callback *videoCallBack;
+    
+    
+    
 }zz_decode_ctx;
+
+
+
 
 
 zz_decode_ctx * zz_decode_context_alloc(int buffersize);

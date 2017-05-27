@@ -10,7 +10,7 @@
 
 @implementation ZZAudioPlayer
 
-static UInt32 gBufferSizeBytes=1024*8;//It muse be pow(2,x)
+static UInt32 gBufferSizeBytes=0x10000;//It muse be pow(2,x)
 
 @synthesize queue;
 
@@ -137,7 +137,10 @@ static void BufferCallback(void *inUserData,AudioQueueRef inAQ,
 - (void)play
 {
     //队列处理开始，此后系统开始自动调用回调(Callback)函数
+    AudioQueueFlush(queue);
     CheckError(AudioQueueStart(queue, nil), "AudioQueueStart error");
+//    AudioQueueReset(queue);
+    
 }
 - (void)pause
 {

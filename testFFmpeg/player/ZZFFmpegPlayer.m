@@ -30,14 +30,17 @@ static void player_statuse(void *userData,int status){
     ZZFFmpegPlayer *player = (__bridge ZZFFmpegPlayer *)userData;
     if (status == 1) {
         printf("打开成功了 \n");
-//        [player play];
-        
+
         dispatch_async(dispatch_get_main_queue(), ^{
+            [player open];
             if (player.playStateCallBack) {
                 
                 player.playStateCallBack(kffmpegPrepareToPlay);
             }
+            
         });
+        
+
        
     }
     
@@ -47,7 +50,8 @@ static void player_statuse(void *userData,int status){
 {
     if (self = [super init]) {
 //        playerDecoder = ffmpeg_decoder_alloc_init();
-        playerController = zz_controller_alloc(10, (__bridge void *)self,player_statuse);
+        playerController = zz_controller_alloc(60, (__bridge void *)self,player_statuse);
+        zz_controller_set_render_func(playerController, handleVideoCallback2);
     }
     return self;
 }
@@ -62,8 +66,9 @@ void handleVideoCallback2(void *userData,void  *data){
     zz_video_frame *frame = (zz_video_frame *)data;
     ffmpeg_videooutput_render(frame->frame);
     
-    
 }
+
+
 
 -(void)openFile:(NSString *)path
 {
@@ -107,19 +112,22 @@ void handleVideoCallback2(void *userData,void  *data){
     
     zz_controller_open(playerController, [path UTF8String]);
     
+}
+
+- (void)open{
     //        playerDecoder->decoded_video_data_callback = handleVideoCallback;
-    audioPlayer = [[ZZAudioPlayer alloc]initWithAudioSamplate:44100 numChannel:2 format:kAudioFormatFlagIsSignedInteger isInterleaved:YES];
+    audioPlayer = [[ZZAudioPlayer alloc]initWithAudioSamplate:playerController->audioInfo->samplerate numChannel:playerController->audioInfo->channels format:kAudioFormatFlagIsSignedInteger isInterleaved:YES];
     audioPlayer.delegate = self;
     
+    
+    
+    ffmpeg_videooutput_init();
     CGFloat height = [UIScreen mainScreen].bounds.size.width*0.75;
     playView = [[ZZVideoPlayerView alloc]initWithFrame:CGRectMake(0, 200, [UIScreen mainScreen].bounds.size.width, height)];
     
-    ffmpeg_videooutput_init();
-    zz_controller_set_render_func(playerController, handleVideoCallback2);
     
     
 }
-
 
 //audio
 - (void)audioQueueOutputWithQueue:(AudioQueueRef)audioQueue queueBuffer:(AudioQueueBufferRef)audioQueueBuffer
@@ -145,6 +153,7 @@ void handleVideoCallback2(void *userData,void  *data){
     status = AudioQueueEnqueueBuffer(audioQueue, audioQueueBuffer, 0, NULL);
 */
     
+    /*
     OSStatus status;
 //    int outsize = 0;
     
@@ -171,6 +180,24 @@ void handleVideoCallback2(void *userData,void  *data){
 //    }
     audioQueueBuffer->mAudioDataByteSize = audioQueueBuffer->mAudioDataBytesCapacity;
     status = AudioQueueEnqueueBuffer(audioQueue, audioQueueBuffer, 0, NULL);
+    */
+    
+    
+    uint32_t len = audioQueueBuffer->mAudioDataBytesCapacity;
+    int buffer_index = 0;
+    while (len>0) {
+        zz_audio_frame *frame = zz_decode_context_get_audio_buffer(playerController->decodeCtx);
+       
+        memcpy(audioQueueBuffer->mAudioData+buffer_index, frame->data, frame->size);
+        len -= frame->size;
+        buffer_index += frame->size;
+        free(frame->data);
+        free(frame);
+    }
+    
+    audioQueueBuffer->mAudioDataByteSize = audioQueueBuffer->mAudioDataBytesCapacity;
+    AudioQueueEnqueueBuffer(audioQueue, audioQueueBuffer, 0, NULL);
+    
 }
 
 

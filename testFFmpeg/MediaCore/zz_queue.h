@@ -20,6 +20,7 @@ typedef struct zz_node {
 
 typedef struct zz_queue {
     pthread_mutex_t lock;
+    pthread_cond_t  cond;
     zz_node *first,*last;
     zz_node_free_callback *callbackFunc;
     int size;
@@ -31,6 +32,7 @@ zz_queue * zz_queue_alloc(int capacity,zz_node_free_callback *callback);
 
 void zz_queue_put(zz_queue *queue,void *data);
 void * zz_queue_pop(zz_queue *quque);
+void * zz_queue_pop_block(zz_queue *queue,int block);
 void zz_quque_free(zz_queue *quque);
 unsigned int zz_queue_size(zz_queue *queue);
 

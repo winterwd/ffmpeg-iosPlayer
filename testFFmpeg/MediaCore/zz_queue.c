@@ -24,7 +24,7 @@ static zz_node * zz_node_alloc(void *data) {
 }
 
 static void zz_node_free(zz_node *node){
-    printf("node free \n");
+//    printf("node free \n");
     free(node);
 }
 
@@ -53,6 +53,7 @@ zz_queue * zz_queue_alloc(int capacity,zz_node_free_callback *callback) {
     q->size = 0;
     q->callbackFunc = (callback != NULL) ? callback : zz_queue_default_free_callback;
     pthread_mutex_init(&q->lock, NULL);
+    pthread_cond_init(&q->cond, NULL);
     return q;
 }
 
@@ -79,7 +80,9 @@ void zz_queue_put(zz_queue *queue,void *data){
     }
     queue->size += 1;
     
-     printf("queue size is %d \n",queue->size);
+    pthread_cond_signal(&queue->cond);
+    
+//     printf("queue size is %d \n",queue->size);
     if (queue->capacity == -1) {
         goto exit_1;
     }
@@ -125,6 +128,47 @@ void * zz_queue_pop(zz_queue *queue) {
     zz_node_free(node);
     queue->size -= 1;
     
+exit:
+    pthread_mutex_unlock(&queue->lock);
+    return data;
+}
+
+
+void * zz_queue_pop_block(zz_queue *queue,int block) {
+    if (queue == NULL) {
+        return NULL;
+    }
+    
+    zz_node *node;
+    void *data = NULL;
+    
+    pthread_mutex_lock(&queue->lock);
+    while (1) {
+
+        if (queue->size == 0) {
+            if (block) {
+                pthread_cond_wait(&queue->cond, &queue->lock);
+                continue;
+            }else{
+                goto  exit;
+            }
+        }else if (queue->size == 1){
+            node = queue->first;
+            queue->first = NULL;
+            queue->last = NULL;
+        }else{
+            node = queue->first;
+            queue->first = node->next;
+            queue->last->next = queue->first;
+        }
+        
+        
+        data = node->data;
+        zz_node_free(node);
+        queue->size -= 1;
+        
+        break;
+    }
 exit:
     pthread_mutex_unlock(&queue->lock);
     return data;

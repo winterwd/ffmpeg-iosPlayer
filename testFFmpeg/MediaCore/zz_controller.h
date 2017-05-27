@@ -19,6 +19,7 @@ typedef enum {
     ZZ_COMMAND_PLAY,
     ZZ_COMMAND_STOP,
     ZZ_COMMAND_RECEIVE_VIDEO,
+    ZZ_COMMAND_VIDEO_RENDER
 }ZZ_COMMAND_TYPE;
 
 typedef void (statusCallback)(void *userData,int status);
@@ -27,6 +28,9 @@ typedef struct zz_command_s {
     ZZ_COMMAND_TYPE type;
     void *data;
 }zz_command;
+
+
+
 
 typedef  struct zz_controller_s {
     int status;
@@ -41,6 +45,10 @@ typedef  struct zz_controller_s {
     void          *opaque;
     statusCallback  *statusCallback;
     videoOutRenderCallback *renderCallBack;
+    zz_audio_frame  *audioInfo;
+    zz_video_frame  *videoInfo;
+    
+    
 }zz_controller;
 
 
@@ -63,6 +71,8 @@ void    zz_controller_pause(zz_controller *controller);
 void    zz_controller_resume(zz_controller *controller);
 
 void    zz_controller_stop(zz_controller *controller);
+
+void    zz_controller_send_cmd(zz_controller *controller,ZZ_COMMAND_TYPE type);
 
 void    zz_controller_set_volume(zz_controller *controller,float volume);
 
