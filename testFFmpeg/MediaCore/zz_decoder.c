@@ -128,9 +128,9 @@ void *zz_video_loop(void *argc) {
         }
         
         float delay = 0.0;
-//        double videotime = decode_ctx->videoTimestamp*av_q2d(decode_ctx->video_decoder->stream->time_base);
-//        double audiotime = decode_ctx->audioTimestamp *av_q2d(decode_ctx->audio_decoder->stream->time_base);
-//        printf("[videotime] : %f,[audioTime]:%f \n", videotime,audiotime);
+        double videotime = decode_ctx->videoTimestamp*av_q2d(decode_ctx->video_decoder->stream->time_base);
+        double audiotime = decode_ctx->audioTimestamp *av_q2d(decode_ctx->audio_decoder->stream->time_base);
+        printf("[pts]  = %f ,[videotime] : %f,[audioTime]:%f \n", pts,videotime,audiotime);
 //        audiotime = FFMAX(0, audiotime-3*0x10000/(float)decode_ctx->audioBytePerSecond);
         
        
