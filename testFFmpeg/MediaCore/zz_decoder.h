@@ -46,9 +46,13 @@ typedef struct zz_decode_context_s{
 
     int         audioBytePerSecond;
     
+    int         audioFrameBufferSize;
+    
     int64_t      duration;
     int64_t      audioTimestamp;
     int64_t      videoTimestamp;
+    int64_t      lastVideoTimeStamp;
+    float       lastVideoDelay;
     
     int         buffer_size;
     int         decode_status;

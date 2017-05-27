@@ -8,8 +8,11 @@
 
 #include "zz_decoder.h"
 
-#define ZZ_AUDIO_QUEUE_SIZE 60
-#define ZZ_VIDEO_QUEUE_SIZE 60
+#define ZZ_AUDIO_QUEUE_SIZE 256
+#define ZZ_VIDEO_QUEUE_SIZE 100
+
+
+int64_t zz_decode_context_get_audio_timestamp(zz_decode_ctx *ctx);
 
 static zz_audio_frame *convert_audio_frame(zz_decoder *decoder,AVFrame *srcFrame){
  
@@ -58,6 +61,7 @@ static zz_video_frame *convert_video_frame(zz_decoder *decoder,AVFrame *srcFrame
     sws_scale(decoder->sws, (const uint8_t * const *)srcFrame->data, srcFrame->linesize, 0, decoder->codec_ctx->height, frame->data, frame->linesize);
     videoFrame->frame = frame;
     videoFrame->timebase = av_frame_get_best_effort_timestamp(srcFrame)*1000;
+    videoFrame->size = buffersize;
     return videoFrame;
 }
 
@@ -101,10 +105,13 @@ void *zz_video_loop(void *argc) {
     
     while (1) {
 
-        if (decode_ctx->audioTimestamp ==0) {
+        if (decode_ctx->audioTimestamp ==0 ) {
         
             continue;
         }
+        
+        
+        
         zz_video_frame *pframe = zz_queue_pop_block(decode_ctx->video_decoder->buffer_queue,1);
         if ( pframe == NULL) {
             break;
@@ -121,41 +128,55 @@ void *zz_video_loop(void *argc) {
         }
         
         float delay = 0.0;
-        double videotime = decode_ctx->videoTimestamp*av_q2d(decode_ctx->video_decoder->stream->time_base);
-        double audiotime = decode_ctx->audioTimestamp *av_q2d(decode_ctx->audio_decoder->stream->time_base);
-        audiotime = FFMAX(0, audiotime-3*0x10000/(float)decode_ctx->audioBytePerSecond);
+//        double videotime = decode_ctx->videoTimestamp*av_q2d(decode_ctx->video_decoder->stream->time_base);
+//        double audiotime = decode_ctx->audioTimestamp *av_q2d(decode_ctx->audio_decoder->stream->time_base);
+//        printf("[videotime] : %f,[audioTime]:%f \n", videotime,audiotime);
+//        audiotime = FFMAX(0, audiotime-3*0x10000/(float)decode_ctx->audioBytePerSecond);
         
        
+   
+        delay = decode_ctx->videoTimestamp - decode_ctx->lastVideoTimeStamp;
         
-        double diff = videotime- audiotime;
-         printf("[videotime] : %f,[audioTime]:%f  [diff]:%f\n", videotime,audiotime,diff);
-        
-        if (diff <= -1.0 || diff >= 1) { //超过1秒，丢弃祯
-            printf("skip video frame \n ");
-            zz_video_frame_free(pframe);
-            continue;
+        if (delay<0) {
+            decode_ctx->lastVideoTimeStamp = decode_ctx->videoTimestamp;
+            delay = 0.01*1000;
         }
+        /*
+        double diff = videotime- audiotime;
+//         printf("[videotime] : %f,[audioTime]:%f  [diff]:%f\n", videotime,audiotime,diff);
+        
+//        if (diff < -1 || diff >= 1) { //超过1秒，丢弃祯
+//            printf("skip video frame \n ");
+//            zz_video_frame_free(pframe);
+//            continue;
+//        }
         
         
         if (diff<0) { //视频比音频慢
             
-            delay = 1/25.0;
+            delay = 0.01;
             
         }else{ //视频比音频快
+            
             delay = diff;
             
-            printf("video delay  = %f \n",delay);
+            
         }
+//        printf("video delay  = %f \n",delay);
         
         delay = delay*AV_TIME_BASE;
         
-        printf("delay  = %f \n",delay);
-        
+       
+        */
         if (decode_ctx->videoCallBack) {
-            usleep(delay);
+            usleep(delay*1000);
             decode_ctx->videoCallBack(decode_ctx->opaque,pframe);
             
+            decode_ctx->lastVideoTimeStamp = decode_ctx->videoTimestamp;
+            
         }
+        
+        
 
     }
     return NULL;
@@ -168,7 +189,7 @@ void *zz_decode_loop(void *argc){
     while (1) {
 
         pthread_mutex_lock(&decode_ctx->decode_lock);
-        while (zz_queue_size(decode_ctx->audio_decoder->buffer_queue)>=50 /*|| zz_queue_size(decode_ctx->video_decoder->buffer_queue)>=3*/) {
+        while (zz_queue_size(decode_ctx->video_decoder->buffer_queue)>=ZZ_VIDEO_QUEUE_SIZE/2 /*|| zz_queue_size(decode_ctx->video_decoder->buffer_queue)>=40*/) {
 //            printf("buffer reached 10 items ,wait.... \n");
             printf("audio queue size: %d , video queue size %d \n",zz_queue_size(decode_ctx->audio_decoder->buffer_queue),zz_queue_size(decode_ctx->video_decoder->buffer_queue));
             pthread_cond_wait(&decode_ctx->decode_cond, &decode_ctx->decode_lock);
@@ -309,6 +330,8 @@ zz_decode_ctx * zz_decode_context_alloc(int buffersize){
     dctx->videoTimestamp = 0;
     dctx->duration = 0;
     dctx->audioBytePerSecond = 0;
+    dctx->audioFrameBufferSize = 0;
+    dctx->lastVideoTimeStamp = 0;
     pthread_mutex_init(&dctx->decode_lock, NULL);
     pthread_cond_init(&dctx->decode_cond, NULL);
     return dctx;
@@ -383,6 +406,7 @@ int zz_decode_context_open(zz_decode_ctx *decode_ctx,const char *path){
             decode_ctx->audio_decoder = zz_decoder_alloc(decode_ctx->format_ctx, st->codec->codec_type);
             decode_ctx->audio_st_index = i;
             decode_ctx->audioBytePerSecond = decode_ctx->audio_decoder->codec_ctx->channels*decode_ctx->audio_decoder->codec_ctx->sample_rate*2;
+       
         }else if (st->codec->codec_type ==  AVMEDIA_TYPE_SUBTITLE){//文本
             decode_ctx->subtitle_decoder = zz_decoder_alloc(decode_ctx->format_ctx, st->codec->codec_type);
             decode_ctx->subtitle_st_index = i;
@@ -390,6 +414,8 @@ int zz_decode_context_open(zz_decode_ctx *decode_ctx,const char *path){
     }
 
     decode_ctx->frame = av_frame_alloc();
+    
+
     
     if (decode_ctx->format_ctx->duration != AV_NOPTS_VALUE) {//采用文件的时长
         decode_ctx->duration = decode_ctx->format_ctx->duration/AV_TIME_BASE;
@@ -436,7 +462,8 @@ int zz_decode_context_read_packet(zz_decode_ctx *decode_ctx){
     zz_decoder *decoder =  NULL;
     if (decode_ctx->packet.stream_index == decode_ctx->audio_st_index) {
         decoder = decode_ctx->audio_decoder;
-        decode_ctx->audioTimestamp = decode_ctx->packet.pts;
+//        decode_ctx->audioTimestamp = decode_ctx->packet.pts;
+//        printf("packet audio time stamp : %lld \n",decode_ctx->audioTimestamp);
         
     }else if (decode_ctx->packet.stream_index == decode_ctx->video_st_index){
         
@@ -462,6 +489,10 @@ int zz_decode_context_read_packet(zz_decode_ctx *decode_ctx){
             if (gotframe) {
                 if (decoder->convert_func) {
                     void *data = decoder->convert_func(decoder,decode_ctx->frame);
+                    if (decode_ctx->packet.stream_index == decode_ctx->audio_st_index) {
+                        zz_audio_frame *frame = (zz_audio_frame *)data;
+                        frame->timebase = decode_ctx->packet.pts;
+                    }
                     zz_queue_put(decoder->buffer_queue, data);
                 }
             }
@@ -483,17 +514,22 @@ int zz_decode_context_read_packet(zz_decode_ctx *decode_ctx){
 
 void * zz_decode_context_get_audio_buffer(zz_decode_ctx *decode_ctx){
     
-    void *data = zz_queue_pop(decode_ctx->audio_decoder->buffer_queue);
-    
+    zz_audio_frame *pframe = zz_queue_pop(decode_ctx->audio_decoder->buffer_queue);
+    if (pframe == NULL) {
+        return NULL;
+    }
+     decode_ctx->audioTimestamp = pframe->timebase;
     pthread_mutex_lock(&decode_ctx->decode_lock);
-    if (zz_queue_size(decode_ctx->audio_decoder->buffer_queue) <= 25) {
+   
+    if (zz_queue_size(decode_ctx->audio_decoder->buffer_queue) < ZZ_AUDIO_QUEUE_SIZE-20) {
 //        printf("audio buffer decrease to 50 items, start read...\n");
         pthread_cond_signal(&decode_ctx->decode_cond);
 
     }
     pthread_mutex_unlock(&decode_ctx->decode_lock);
-    return data;
+    return (void *)pframe;
 }
+
 
 
 void * zz_decode_context_get_video_buffer(zz_decode_ctx *decode_ctx){
@@ -502,14 +538,14 @@ void * zz_decode_context_get_video_buffer(zz_decode_ctx *decode_ctx){
     
     void *data = zz_queue_pop(decode_ctx->video_decoder->buffer_queue);
     
-//    
-//    pthread_mutex_lock(&decode_ctx->decode_lock);
-//    if (zz_queue_size(decode_ctx->video_decoder->buffer_queue) <= 2) {
-//        printf("video buffer decrease to 5 items, start read...\n");
-//        pthread_cond_signal(&decode_ctx->decode_cond);
-//        
-//    }
-//    pthread_mutex_unlock(&decode_ctx->decode_lock);
+    
+    pthread_mutex_lock(&decode_ctx->decode_lock);
+    if (zz_queue_size(decode_ctx->video_decoder->buffer_queue) <ZZ_VIDEO_QUEUE_SIZE/2) {
+        printf("video buffer decrease to 5 items, start read...\n");
+        pthread_cond_signal(&decode_ctx->decode_cond);
+        
+    }
+    pthread_mutex_unlock(&decode_ctx->decode_lock);
     
     return data;
 }

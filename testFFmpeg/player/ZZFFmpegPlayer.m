@@ -187,7 +187,7 @@ void handleVideoCallback2(void *userData,void  *data){
     int buffer_index = 0;
     while (len>0) {
         zz_audio_frame *frame = zz_decode_context_get_audio_buffer(playerController->decodeCtx);
-       
+   
         memcpy(audioQueueBuffer->mAudioData+buffer_index, frame->data, frame->size);
         len -= frame->size;
         buffer_index += frame->size;
