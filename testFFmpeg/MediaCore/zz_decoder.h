@@ -31,7 +31,7 @@ typedef struct zz_decoder_s {
     
     zz_decode_func          *decode_func;
     zz_convert_frame_func   *convert_func;
-    
+     AVFrame    *frame;  ///<保存单次解码后的frame
     
     
 }zz_decoder;
@@ -67,6 +67,19 @@ typedef struct zz_decode_context_s{
     
     zz_video_render_callback *videoCallBack;
     
+    zz_queue     *audio_queue;
+    zz_queue     *video_queue;
+    
+    
+    float       fps;
+    float       video_timebase;
+    float       audio_timebase;
+    
+    int64_t     start_time;
+    float       first_frame_time;
+    float       current_frame_time;
+    float       current_audio_time;
+
     
     
 }zz_decode_ctx;
