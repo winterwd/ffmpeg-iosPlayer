@@ -10,7 +10,7 @@
 
 @implementation ZZAudioPlayer
 
-static UInt32 gBufferSizeBytes=0x10000;//It muse be pow(2,x)
+static UInt32 gBufferSizeBytes=8192;//It muse be pow(2,x)
 
 @synthesize queue;
 

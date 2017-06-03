@@ -100,6 +100,23 @@ exit_0:
 
 }
 
+void * zz_queue_peek(zz_queue *queue){
+    if (queue == NULL) {
+        return NULL;
+    }
+    
+    zz_node *node;
+    void *data = NULL;
+    pthread_mutex_lock(&queue->lock);
+    if (queue->size>0) {
+        node = queue->first;
+        data = node->data;
+    }
+    pthread_mutex_unlock(&queue->lock);
+    
+    return data;
+}
+
 void * zz_queue_pop(zz_queue *queue) {
     if (queue == NULL) {
         return NULL;
