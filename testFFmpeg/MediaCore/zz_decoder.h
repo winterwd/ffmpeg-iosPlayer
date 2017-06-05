@@ -41,8 +41,8 @@ typedef struct zz_decode_context_s{
     AVFormatContext *format_ctx;
     int         video_st_index,audio_st_index,subtitle_st_index;
     zz_decoder *video_decoder,*audio_decoder,*subtitle_decoder;
-    AVPacket   packet;  ///<保存读取到的包
-    AVFrame    *frame;  ///<保存单次解码后的frame
+    
+    
 
     int         audioBytePerSecond;
     

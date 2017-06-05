@@ -127,9 +127,9 @@ static int zz_decode_packet(zz_decode_ctx *decode_ctx,AVPacket *packet){
             if (gotframe) {
                 if (decoder->convert_func) {
                     void *data = decoder->convert_func(decoder,decoder->frame);
-                    if (decode_ctx->packet.stream_index == decode_ctx->audio_st_index) {
+                    if (packet->stream_index == decode_ctx->audio_st_index) {
                         zz_audio_frame *frame = (zz_audio_frame *)data;
-                        frame->timebase = decode_ctx->packet.pts;
+                        frame->timebase = packet->pts;
                     }
                     zz_queue_put(decoder->buffer_queue, data);
                 }
@@ -141,6 +141,9 @@ static int zz_decode_packet(zz_decode_ctx *decode_ctx,AVPacket *packet){
             
             packet->size -= len;
         }
+    }
+    if (packet!=NULL) {
+        zz_packet_free(packet);
     }
     
     return 1;
@@ -173,95 +176,29 @@ void zz_decoder_free(zz_decoder *decoder) {
 }
 
 
-void *zz_video_loop(void *argc) {
-    zz_decode_ctx *decode_ctx = argc;
-    
-    while (1) {
-
-        if (decode_ctx->audioTimestamp ==0 ) {
-        
-            continue;
-        }
-        
-        
-        
-        zz_video_frame *pframe = zz_queue_pop_block(decode_ctx->video_decoder->buffer_queue,1);
-        if ( pframe == NULL) {
-            break;
-        }
-        
-        float presentTime = pframe->timebase*decode_ctx->video_timebase*1000;
-        
-        
-        
-     
-        
-        if (decode_ctx->start_time == 0) {
-            decode_ctx->start_time = zz_gettime();
-            decode_ctx->first_frame_time = presentTime;
-            decode_ctx->current_frame_time = presentTime;
-        }
-        
-        int64_t ctime = zz_gettime();
-        float interval = (ctime -  decode_ctx->start_time)/1000.0;
-        
-        float playdt = presentTime - decode_ctx->first_frame_time;
-        
-//        printf("ctime: %lld starttime:%lld frame_time:%f first_frame_time:%f    \ndt = %lld   playdt = %lld  \n",ctime,decode_ctx->start_time,presentTime,decode_ctx->first_frame_time,dt,playdt);
-        //ctime: 1496375016525682 starttime:1496375016525623 frame_time:0.187500 first_frame_time:0.000000
-//        dt = 59   playdt = 0
-        
-        float delay = presentTime - decode_ctx->current_frame_time;
-        
-        float diff = interval - playdt;
-        
-        printf("diff  %f",diff);
-        
-        if (diff>=200) {
-            zz_video_frame_free(pframe);
-            continue;
-        }
-        
-        
-        printf("interval : %f  ,playdt: %f  \n",interval,playdt);
-        
-        if (decode_ctx->videoCallBack) {
-            
-            usleep(delay*1000);
-            
-            decode_ctx->videoCallBack(decode_ctx->opaque,pframe);
-            
-            decode_ctx->current_frame_time = presentTime;
-        }
-        
-        
-
-
-
-    }
-    return NULL;
-}
 
 
 void *zz_video_loop1(void *argc) {
     zz_decode_ctx *decode_ctx = argc;
     
     while (1) {
-        AVPacket *packet = zz_queue_pop_block(decode_ctx->video_queue,1);
-        zz_decode_packet(decode_ctx, packet);
-        zz_packet_free(packet);
-        zz_video_frame *pframe = zz_queue_pop(decode_ctx->video_decoder->buffer_queue);
         
-        if (pframe == NULL) {
-            usleep(50000);
+        if (decode_ctx->current_audio_time == 0) {
+            usleep(100000);
             continue;
         }
         
-        float presentTime = FFMAX(0, pframe->timebase*decode_ctx->video_timebase*1000-3000);
+        AVPacket *packet = zz_queue_pop_block(decode_ctx->video_queue,1);
+        zz_decode_packet(decode_ctx, packet);
         
+        zz_video_frame *pframe = zz_queue_pop(decode_ctx->video_decoder->buffer_queue);
         
+        if (pframe == NULL) {
+            continue;
+        }
         
-        
+        float presentTime = FFMAX(0, pframe->timebase*decode_ctx->video_timebase*1000);
+
         
         if (decode_ctx->start_time == 0) {
             decode_ctx->start_time = zz_gettime();
@@ -270,26 +207,36 @@ void *zz_video_loop1(void *argc) {
         }
         
         int64_t ctime = zz_gettime();
-        float interval = (ctime -  decode_ctx->start_time)/1000.0;
         
+         //当前播放的时间
+        float interval = (ctime -  decode_ctx->start_time)/1000.0;
+        //当前视频将要显示的时间
         float playdt = presentTime - decode_ctx->first_frame_time;
         
         //        printf("ctime: %lld starttime:%lld frame_time:%f first_frame_time:%f    \ndt = %lld   playdt = %lld  \n",ctime,decode_ctx->start_time,presentTime,decode_ctx->first_frame_time,dt,playdt);
         //ctime: 1496375016525682 starttime:1496375016525623 frame_time:0.187500 first_frame_time:0.000000
         //        dt = 59   playdt = 0
         
+        //当前祯显示的时间-上一祯的时间，计算出这一祯的延迟时间
         float delay = presentTime - decode_ctx->current_frame_time;
         
         
         float diff = interval - playdt;
         
+//        if (diff>=500) { //如果播放时间 大于 视频祯的时间 0.5秒，丢弃祯。
+//            zz_video_frame_free(pframe);
+//            printf("skip video frames... \n");
+//            continue;
+//        }
+        
         if (diff>delay) {
             delay *= 0.8;
         }
-        printf("diff  %f delay %f  ",diff,delay);
+        
+//        printf("audiotime = %f   delay = %f  ",decode_ctx->current_audio_time,delay);
         
 
-        printf("interval : %f  ,playdt: %f  \n",interval,playdt);
+//        printf("curtime : %f  ,playdt: %f  diff = %f\n",interval,playdt,diff);
         
         if (decode_ctx->videoCallBack) {
             
@@ -303,32 +250,7 @@ void *zz_video_loop1(void *argc) {
     return NULL;
 }
 
-void *zz_decode_loop(void *argc){
-    
-    zz_decode_ctx *decode_ctx = argc;
-    printf(" decode thread start \n ");
-    while (1) {
 
-        pthread_mutex_lock(&decode_ctx->decode_lock);
-        while (zz_queue_size(decode_ctx->video_decoder->buffer_queue)>=ZZ_VIDEO_QUEUE_SIZE/2 /*|| zz_queue_size(decode_ctx->video_decoder->buffer_queue)>=40*/) {
-//            printf("buffer reached 10 items ,wait.... \n");
-            printf("audio queue size: %d , video queue size %d \n",zz_queue_size(decode_ctx->audio_decoder->buffer_queue),zz_queue_size(decode_ctx->video_decoder->buffer_queue));
-            pthread_cond_wait(&decode_ctx->decode_cond, &decode_ctx->decode_lock);
-        }
-        pthread_mutex_unlock(&decode_ctx->decode_lock);
-        
-        
-        
-        int ret = zz_decode_context_read_packet(decode_ctx);
-        if (ret == AVERROR_EOF) {
-            printf("reached end of file\n");
-            break;
-        }
-    }
-    
-    printf(" decode thread end \n ");
-    return NULL;
-}
 
 void *zz_decode_loop1(void *argc){
     
@@ -339,7 +261,7 @@ void *zz_decode_loop1(void *argc){
         pthread_mutex_lock(&decode_ctx->decode_lock);
         while (zz_queue_size(decode_ctx->audio_queue)>=ZZ_PACKET_QUEUE_CACHE_SIZE) {
             //            printf("buffer reached 10 items ,wait.... \n");
-            printf("packet queue size: %d \n",zz_queue_size(decode_ctx->audio_queue));
+//            printf("packet queue size: %d \n",zz_queue_size(decode_ctx->audio_queue));
             pthread_cond_wait(&decode_ctx->decode_cond, &decode_ctx->decode_lock);
         }
         pthread_mutex_unlock(&decode_ctx->decode_lock);
@@ -473,7 +395,6 @@ zz_decode_ctx * zz_decode_context_alloc(int buffersize){
     dctx->audio_decoder = NULL;
     dctx->subtitle_decoder = NULL;
     dctx->buffer_size = buffersize;
-    av_init_packet(&dctx->packet);
     dctx->audioTimestamp = 0;
     dctx->videoTimestamp = 0;
     dctx->duration = 0;
@@ -481,6 +402,7 @@ zz_decode_ctx * zz_decode_context_alloc(int buffersize){
     dctx->audioFrameBufferSize = 0;
     dctx->lastVideoTimeStamp = 0;
     dctx->start_time = 0;
+    dctx->current_audio_time = 0.0;
     dctx->audio_queue = zz_queue_alloc(ZZ_PACKET_QUEUE_SIZE, zz_packet_free);
     dctx->video_queue = zz_queue_alloc(ZZ_PACKET_QUEUE_SIZE, zz_packet_free);
     pthread_mutex_init(&dctx->decode_lock, NULL);
@@ -507,9 +429,6 @@ void zz_decode_context_destroy(zz_decode_ctx *decode_ctx){
         zz_decoder_free(decode_ctx->subtitle_decoder);
     }
     
-    if (decode_ctx->frame) {
-        av_frame_free(&decode_ctx->frame);
-    }
     
     avformat_close_input(&decode_ctx->format_ctx);
     pthread_mutex_unlock(&decode_ctx->decode_lock);
@@ -588,9 +507,6 @@ int zz_decode_context_open(zz_decode_ctx *decode_ctx,const char *path){
     
     printf("video_timebase  = %f  fps = %f  audio_timebase = %f\n",decode_ctx->video_timebase,decode_ctx->fps,decode_ctx->audio_timebase);
     
-    decode_ctx->frame = av_frame_alloc();
-    
-
     
     if (decode_ctx->format_ctx->duration != AV_NOPTS_VALUE) {//采用文件的时长
         decode_ctx->duration = decode_ctx->format_ctx->duration/AV_TIME_BASE;
@@ -622,70 +538,9 @@ void zz_decode_context_start(zz_decode_ctx *decode_ctx) {
     pthread_create(&decode_ctx->videoThreadId, NULL, zz_video_loop1, decode_ctx);
 }
 
-int zz_decode_context_read_packet(zz_decode_ctx *decode_ctx){
-    
 
-    int ret = 0;
-    
-    
-    ret = av_read_frame(decode_ctx->format_ctx, &decode_ctx->packet);
-    if (ret<0) {
-        printf("read packet error occurs.\n");
-        return -2;
-    }
-    int size = decode_ctx->packet.size;
-    
-    zz_decoder *decoder =  NULL;
-    if (decode_ctx->packet.stream_index == decode_ctx->audio_st_index) {
-        decoder = decode_ctx->audio_decoder;
 
-        
-    }else if (decode_ctx->packet.stream_index == decode_ctx->video_st_index){
-        
-        decoder = decode_ctx->video_decoder;
-        
-    }else{
-        return -1;
-    }
 
-    while (size>0) {
-        int gotframe = 0;
-        int len = 0;
-        
-
-        if (decoder->decode_func) {
-            
-            len = decoder->decode_func(decoder->codec_ctx,decode_ctx->frame,&gotframe,&decode_ctx->packet);
-            
-            if (len < 0) {
-                return -1;
-            }
-            
-            if (gotframe) {
-                if (decoder->convert_func) {
-                    void *data = decoder->convert_func(decoder,decode_ctx->frame);
-                    if (decode_ctx->packet.stream_index == decode_ctx->audio_st_index) {
-                        zz_audio_frame *frame = (zz_audio_frame *)data;
-                        frame->timebase = decode_ctx->packet.pts;
-                    }
-                    zz_queue_put(decoder->buffer_queue, data);
-                }
-            }
-            
-            if (len == 0) {
-                break;
-            }
-            
-            size -= len;
-        }
-        
-    }
-    
-    av_free_packet(&decode_ctx->packet);
-    av_freep(&decode_ctx->packet);
-
-    return ret;
-}
 
 void * zz_decode_context_get_audio_buffer(zz_decode_ctx *decode_ctx){
     
@@ -693,11 +548,15 @@ void * zz_decode_context_get_audio_buffer(zz_decode_ctx *decode_ctx){
     
     AVPacket *packet = zz_queue_pop_block(decode_ctx->audio_queue,1);
     zz_decode_packet(decode_ctx, packet);
-    zz_packet_free(packet);
     zz_audio_frame *pframe = zz_queue_pop(decode_ctx->audio_decoder->buffer_queue);
     if (pframe == NULL) {
         return NULL;
     }
+    
+//    float audiotime = 0;
+    
+    decode_ctx->current_audio_time = pframe->timebase *decode_ctx->audio_timebase;
+    
     pthread_mutex_lock(&decode_ctx->decode_lock);
    
     if (zz_queue_size(decode_ctx->audio_decoder->buffer_queue) < ZZ_PACKET_QUEUE_CACHE_SIZE) {
@@ -757,3 +616,71 @@ int zz_decode_context_read_packet1(zz_decode_ctx *decode_ctx){
     }
     return ret;
 }
+
+
+/*
+
+int zz_decode_context_read_packet(zz_decode_ctx *decode_ctx){
+    
+    
+    int ret = 0;
+    
+    
+    ret = av_read_frame(decode_ctx->format_ctx, &decode_ctx->packet);
+    if (ret<0) {
+        printf("read packet error occurs.\n");
+        return -2;
+    }
+    int size = decode_ctx->packet.size;
+    
+    zz_decoder *decoder =  NULL;
+    if (decode_ctx->packet.stream_index == decode_ctx->audio_st_index) {
+        decoder = decode_ctx->audio_decoder;
+        
+        
+    }else if (decode_ctx->packet.stream_index == decode_ctx->video_st_index){
+        
+        decoder = decode_ctx->video_decoder;
+        
+    }else{
+        return -1;
+    }
+    
+    while (size>0) {
+        int gotframe = 0;
+        int len = 0;
+        
+        
+        if (decoder->decode_func) {
+            
+            len = decoder->decode_func(decoder->codec_ctx,decode_ctx->frame,&gotframe,&decode_ctx->packet);
+            
+            if (len < 0) {
+                return -1;
+            }
+            
+            if (gotframe) {
+                if (decoder->convert_func) {
+                    void *data = decoder->convert_func(decoder,decode_ctx->frame);
+                    if (decode_ctx->packet.stream_index == decode_ctx->audio_st_index) {
+                        zz_audio_frame *frame = (zz_audio_frame *)data;
+                        frame->timebase = decode_ctx->packet.pts;
+                    }
+                    zz_queue_put(decoder->buffer_queue, data);
+                }
+            }
+            
+            if (len == 0) {
+                break;
+            }
+            
+            size -= len;
+        }
+        
+    }
+    
+    av_free_packet(&decode_ctx->packet);
+    av_freep(&decode_ctx->packet);
+    
+    return ret;
+}*/
