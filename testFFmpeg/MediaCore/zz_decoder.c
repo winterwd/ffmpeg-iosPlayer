@@ -176,10 +176,19 @@ void zz_decoder_free(zz_decoder *decoder) {
 }
 
 
+/*
+ seek-to-time(float time) //time in seconds
+ 计算跳转时间与当前时间的差值 : diff = time - curtime, diff>0 往前放，diff<0 往后放 ,用seek_flag 标记跳转方向
+ 计算跳转位置:int64_t seek _ pos = time * av_q2d(stream->timebase);
+ 调用av _ seek _ frame (pformat ,stream index , seek _ pos , seek _flag) 进行跳转
+ 清除原来缓存队列的数据
+ */
 
 
 void *zz_video_loop1(void *argc) {
     zz_decode_ctx *decode_ctx = argc;
+    
+    
     
     while (1) {
         
@@ -260,7 +269,6 @@ void *zz_decode_loop1(void *argc){
         
         pthread_mutex_lock(&decode_ctx->decode_lock);
         while (zz_queue_size(decode_ctx->audio_queue)>=ZZ_PACKET_QUEUE_CACHE_SIZE) {
-            //            printf("buffer reached 10 items ,wait.... \n");
 //            printf("packet queue size: %d \n",zz_queue_size(decode_ctx->audio_queue));
             pthread_cond_wait(&decode_ctx->decode_cond, &decode_ctx->decode_lock);
         }
