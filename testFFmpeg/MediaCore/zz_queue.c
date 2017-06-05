@@ -181,14 +181,33 @@ void * zz_queue_pop_block(zz_queue *queue,int block) {
         
         
         data = node->data;
+        
         zz_node_free(node);
         queue->size -= 1;
+        
+
         
         break;
     }
 exit:
     pthread_mutex_unlock(&queue->lock);
     return data;
+}
+
+void zz_queue_flush(zz_queue *queue){
+    if (queue == NULL) {
+        return;
+    }
+    
+    pthread_mutex_lock(&queue->lock);
+    if (queue->size>0) { //删除所有的结点
+        queue->last->next = NULL;
+        zz_queue_node_free(queue->first, queue->callbackFunc);
+    }
+    queue->first = NULL;
+    queue->last = NULL;
+    queue->size = 0;
+    pthread_mutex_unlock(&queue->lock);
 }
 
 unsigned int zz_queue_size(zz_queue *queue){
@@ -210,6 +229,7 @@ void zz_quque_free(zz_queue *queue) {
         queue->last->next = NULL;
         zz_queue_node_free(queue->first, queue->callbackFunc);
     }
+    queue->size = 0;
     pthread_mutex_unlock(&queue->lock);
     pthread_mutex_destroy(&queue->lock);
     free(queue);

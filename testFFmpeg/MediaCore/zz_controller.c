@@ -11,35 +11,35 @@
 
 
 
-static zz_command *zz_command_alloc(ZZ_COMMAND_TYPE type,void *data) {
-    zz_command *cmd = (zz_command *)malloc(sizeof(zz_command));
-    cmd->data = data;
-    cmd->type = type;
-    return cmd;
+static zz_event *zz_event_alloc(ZZ_EVENT_TYPE type,void *data) {
+    zz_event *event = (zz_event *)malloc(sizeof(zz_event));
+    event->data = data;
+    event->type = type;
+    return event;
 }
 
 
 static void zz_video_render(void *argc,void *data){
     zz_controller *c = (zz_controller *)argc;
-    zz_command *cmd = zz_command_alloc(ZZ_COMMAND_VIDEO_RENDER, NULL);
-    cmd->data = data;
-    zz_queue_put(c->commandQueue, cmd);
+    zz_event *event = zz_event_alloc(ZZ_EVENT_VIDEO_RENDER, NULL);
+    event->data = data;
+    zz_queue_put(c->eventQueue, event);
 }
 
-static void *zz_controller_event_loop(void *argc) {
+static void *zz_controller_EVENT_loop(void *argc) {
     
     zz_controller *c = (zz_controller *)argc;
-    zz_command *cmd = NULL;
+    zz_event *event = NULL;
     while(1) {
-        cmd = zz_queue_pop_block(c->commandQueue,1);
-        if (cmd!=NULL) { //处理命令
-            if (cmd->type == ZZ_COMMAND_OPEN) {
+        event = zz_queue_pop_block(c->eventQueue,1);
+        if (event!=NULL) { //处理命令
+            if (event->type == ZZ_EVENT_OPEN) {
                 
                 if (c->decodeCtx == NULL) {
                     c->decodeCtx = zz_decode_context_alloc(c->bufferSize);
                     c->decodeCtx->opaque = c;
                 }
-                char *path = (char *)cmd->data;
+                char *path = (char *)event->data;
                 int ret = zz_decode_context_open(c->decodeCtx, path);
                 
                 c->decodeCtx->videoCallBack = zz_video_render;
@@ -52,11 +52,11 @@ static void *zz_controller_event_loop(void *argc) {
                 c->statusCallback(c->opaque,ret);
                 
                 c->status = 1;
-            }else if (cmd->type == ZZ_COMMAND_VIDEO_RENDER){
+            }else if (event->type == ZZ_EVENT_VIDEO_RENDER){
                 if (c->renderCallBack ) {
                 
-                    zz_video_frame *frame = cmd->data;
-                    if (cmd->data!= NULL) {
+                    zz_video_frame *frame = event->data;
+                    if (event->data!= NULL) {
                         c->renderCallBack(c->opaque,frame);
                         avpicture_free((AVPicture*)frame->frame);
                         free(frame);
@@ -64,7 +64,7 @@ static void *zz_controller_event_loop(void *argc) {
                 }
             }
 
-            free(cmd);
+            free(event);
             
         }
     }
@@ -90,11 +90,11 @@ void zz_controller_init(zz_controller *controller) {
     if (controller == NULL) {
         return;
     }
-    controller->commandQueue = zz_queue_alloc(8, NULL);
+    controller->eventQueue = zz_queue_alloc(8, NULL);
     controller->status = 0;
     controller->audioInfo = malloc(sizeof(zz_audio_frame));
     controller->videoInfo = malloc(sizeof(zz_video_frame));
-    pthread_create(&controller->eventThreadId, NULL, zz_controller_event_loop, controller);
+    pthread_create(&controller->eventThreadId, NULL, zz_controller_EVENT_loop, controller);
 }
 
 void zz_controller_free(zz_controller *controller){
@@ -107,18 +107,18 @@ void zz_controller_destroy(zz_controller *controller){
 
 void zz_controller_open(zz_controller *controller,const char *path) {
 
-    zz_command *cmd = zz_command_alloc(ZZ_COMMAND_OPEN, (void *)path);
-    zz_queue_put(controller->commandQueue, cmd);
+    zz_event *event = zz_event_alloc(ZZ_EVENT_OPEN, (void *)path);
+    zz_queue_put(controller->eventQueue, event);
 }
 
 void zz_controller_close(zz_controller *controller) {
-    zz_command *cmd = zz_command_alloc(ZZ_COMMAND_CLOSE, NULL);
-    zz_queue_put(controller->commandQueue, cmd);
+    zz_event *event = zz_event_alloc(ZZ_EVENT_CLOSE, NULL);
+    zz_queue_put(controller->eventQueue, event);
 }
 
 void zz_controller_play(zz_controller *controller) {
-    zz_command *cmd = zz_command_alloc(ZZ_COMMAND_PLAY, NULL);
-    zz_queue_put(controller->commandQueue, cmd);
+    zz_event *event = zz_event_alloc(ZZ_EVENT_PLAY, NULL);
+    zz_queue_put(controller->eventQueue, event);
 }
 
 void zz_controller_pause(zz_controller *controller){
@@ -130,13 +130,13 @@ void zz_controller_resume(zz_controller *controller) {
 }
 
 void zz_controller_stop(zz_controller *controller) {
-    zz_command *cmd = zz_command_alloc(ZZ_COMMAND_PLAY, NULL);
-    zz_queue_put(controller->commandQueue, cmd);
+    zz_event *event = zz_event_alloc(ZZ_EVENT_PLAY, NULL);
+    zz_queue_put(controller->eventQueue, event);
 }
 
-void zz_controller_send_cmd(zz_controller *controller,ZZ_COMMAND_TYPE type) {
-    zz_command *cmd = zz_command_alloc(type, NULL);
-    zz_queue_put(controller->commandQueue, cmd);
+void zz_controller_send_event(zz_controller *controller,ZZ_EVENT_TYPE type) {
+    zz_event *event = zz_event_alloc(type, NULL);
+    zz_queue_put(controller->eventQueue, event);
 }
 
 void zz_controller_set_volume(zz_controller *controller,float volume){
@@ -155,13 +155,25 @@ void zz_controller_set_area(zz_controller *controller,int x,int y,float width,fl
 
 
 double zz_controller_get_duration(zz_controller *controller) {
+    if (controller->decodeCtx != NULL) {
+        return controller->decodeCtx->duration;
+    }
     return 0.0;
 }
 
 double zz_controller_get_cur_time(zz_controller *controller) {
+    if (controller->decodeCtx != NULL) {
+        return zz_decode_context_get_current_time(controller->decodeCtx);
+    }
     return 0.0;
 }
 
+int zz_controller_seek_to_time(zz_controller *controller,float time){
+    if (controller->decodeCtx != NULL) {
+        zz_decode_context_seek_to_time(controller->decodeCtx, time);
+    }
+    return -1;
+}
 
 #pragma mark - set method
 void zz_controller_set_render_func(zz_controller *controller,videoOutRenderCallback *rendCallBack){

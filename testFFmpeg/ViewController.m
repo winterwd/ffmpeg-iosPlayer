@@ -116,11 +116,11 @@
 - (void)testFFmpeg
 {
     
-//    NSString *infileName = @"/Users/xiaowoniu/Documents/一些素材/test.flv";
+    NSString *infileName = @"/Users/xiaowoniu/Documents/一些素材/test.flv";
 //    NSString *infileName = @"/Users/smart/Documents/temp/test.flv";
     //Users/xiaowoniu/Downloads/13.mp4
     //Users/smart/Desktop/未命名文件夹/output.mp4
-    NSString *infileName = @"/Users/smart/Documents/temp/qianxun/qianxun8.flv";
+//    NSString *infileName = @"/Users/smart/Documents/temp/qianxun/qianxun8.flv";
 //    NSString *infileName = @"/Users/smart/Desktop/未命名文件夹/output1.mp4";
 //    NSString *outFileName = @"/Users/smart/Documents/temp/test.pcm";
 //    NSString *infileName = @"http://bobolive.nosdn.127.net/bobo_1477399116609_39807374.mp4";
@@ -147,9 +147,4 @@
     
 }
 
-
-- (void)testThread
-{
-    thread_main();
-}
 @end

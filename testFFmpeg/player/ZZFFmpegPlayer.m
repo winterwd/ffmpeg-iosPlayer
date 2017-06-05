@@ -212,18 +212,20 @@ void handleVideoCallback2(void *userData,void  *data){
 
 - (double)duration
 {
-    return  0.0;
+    return  zz_controller_get_duration(playerController);
 //    playerDecoder->duration;
 }
 
 - (double)curTime{
-    return  0.0;
+    return zz_controller_get_cur_time(playerController);
 //    playerDecoder->curTime;
 }
 
 - (void)setCurTime:(double)curTime
 {
-    seek_to_time(playerDecoder, curTime);
+//    seek_to_time(playerDecoder, curTime);
+    
+    zz_controller_seek_to_time(playerController, curTime);
 }
 
 

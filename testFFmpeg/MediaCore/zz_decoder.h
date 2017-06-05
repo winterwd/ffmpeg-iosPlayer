@@ -48,11 +48,8 @@ typedef struct zz_decode_context_s{
     
     int         audioFrameBufferSize;
     
-    int64_t      duration;
-    int64_t      audioTimestamp;
-    int64_t      videoTimestamp;
-    int64_t      lastVideoTimeStamp;
-    float       lastVideoDelay;
+
+
     
     int         buffer_size;
     int         decode_status;
@@ -75,10 +72,17 @@ typedef struct zz_decode_context_s{
     float       video_timebase;
     float       audio_timebase;
     
-    int64_t     start_time;
-    float       first_frame_time;
-    float       current_frame_time;
-    float       current_audio_time;
+    int64_t     start_time;           ///< ms
+    float       duration;            ///< seconds
+    float       first_frame_time;     /// ms
+    float       current_frame_time;  ///< ms
+    float       current_video_time; ///< seconds
+    float       current_audio_time; ///< seconds
+    
+    int64_t     seek_pos; ///<跳转位置
+    uint8_t     seek_flag; ///<跳转方向
+    uint8_t     seek_req; ///<是否跳转,0非跳转，1跳转
+    
 
     
     
@@ -92,6 +96,9 @@ zz_decode_ctx * zz_decode_context_alloc(int buffersize);
 int zz_decode_context_open(zz_decode_ctx *decode_ctx,const char *path);
 void zz_decode_context_start(zz_decode_ctx *decode_ctx);
 int zz_decode_context_read_packet(zz_decode_ctx *decode);
+
+float zz_decode_context_get_current_time(zz_decode_ctx *decode_ctx);
+int   zz_decode_context_seek_to_time(zz_decode_ctx *decode_ctx,float time);
 void * zz_decode_context_get_audio_buffer(zz_decode_ctx *decode_ctx);
 void * zz_decode_context_get_video_buffer(zz_decode_ctx *decode_ctx);
 #endif /* zz_decoder_h */

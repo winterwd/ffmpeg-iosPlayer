@@ -13,21 +13,22 @@
 #include "zz_define.h"
 #include "zz_decoder.h"
 typedef enum {
-    ZZ_COMMAND_DESTROY,
-    ZZ_COMMAND_OPEN,
-    ZZ_COMMAND_CLOSE,
-    ZZ_COMMAND_PLAY,
-    ZZ_COMMAND_STOP,
-    ZZ_COMMAND_RECEIVE_VIDEO,
-    ZZ_COMMAND_VIDEO_RENDER
-}ZZ_COMMAND_TYPE;
+    ZZ_EVENT_UNKNOW,
+    ZZ_EVENT_DESTROY,
+    ZZ_EVENT_OPEN,
+    ZZ_EVENT_CLOSE,
+    ZZ_EVENT_PLAY,
+    ZZ_EVENT_STOP,
+    ZZ_EVENT_RECEIVE_VIDEO,
+    ZZ_EVENT_VIDEO_RENDER
+}ZZ_EVENT_TYPE;
 
 typedef void (statusCallback)(void *userData,int status);
 typedef void (videoOutRenderCallback)(void *userData,void *frame);
-typedef struct zz_command_s {
-    ZZ_COMMAND_TYPE type;
+typedef struct zz_event_s {
+    ZZ_EVENT_TYPE type;
     void *data;
-}zz_command;
+}zz_event;
 
 
 
@@ -40,7 +41,7 @@ typedef  struct zz_controller_s {
     pthread_t eventThreadId;
     
     int64_t timeStamp;
-    zz_queue *commandQueue;
+    zz_queue *eventQueue;
     zz_decode_ctx *decodeCtx;
     void          *opaque;
     statusCallback  *statusCallback;
@@ -72,7 +73,7 @@ void    zz_controller_resume(zz_controller *controller);
 
 void    zz_controller_stop(zz_controller *controller);
 
-void    zz_controller_send_cmd(zz_controller *controller,ZZ_COMMAND_TYPE type);
+void    zz_controller_send_cmd(zz_controller *controller,ZZ_EVENT_TYPE type);
 
 void    zz_controller_set_volume(zz_controller *controller,float volume);
 
@@ -83,6 +84,8 @@ void    zz_controller_set_area(zz_controller *controller,int x,int y,float width
 double  zz_controller_get_duration(zz_controller *controller);
 
 double  zz_controller_get_cur_time(zz_controller *controller);
+
+int     zz_controller_seek_to_time(zz_controller *controller,float time);
 
 
 //set method

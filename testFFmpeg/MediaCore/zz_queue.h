@@ -34,6 +34,7 @@ void zz_queue_put(zz_queue *queue,void *data);
 void * zz_queue_pop(zz_queue *quque);
 void * zz_queue_peek(zz_queue *queue);
 void * zz_queue_pop_block(zz_queue *queue,int block);
+void zz_queue_flush(zz_queue *queue);
 void zz_quque_free(zz_queue *quque);
 unsigned int zz_queue_size(zz_queue *queue);
 
