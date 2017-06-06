@@ -257,20 +257,20 @@ void *zz_video_loop1(void *argc) {
         float presentTime = FFMAX(0, decode_ctx->current_video_time*1000);
         
         
+
         if (decode_ctx->start_time == 0) {
             decode_ctx->start_time = zz_gettime();
             decode_ctx->first_frame_time = presentTime;
             decode_ctx->current_frame_time = presentTime;
         }
         
-        int64_t ctime = zz_gettime();
         
         
         
          //当前播放的时间
-        float interval = (ctime -  decode_ctx->start_time)/1000.0;
+//        float interval = (ctime -  decode_ctx->start_time)/1000.0;
         //当前视频将要显示的时间
-        float playdt = presentTime - decode_ctx->first_frame_time;
+//        float playdt = presentTime - decode_ctx->first_frame_time;
         
         //        printf("ctime: %lld starttime:%lld frame_time:%f first_frame_time:%f    \ndt = %lld   playdt = %lld  \n",ctime,decode_ctx->start_time,presentTime,decode_ctx->first_frame_time,dt,playdt);
         //ctime: 1496375016525682 starttime:1496375016525623 frame_time:0.187500 first_frame_time:0.000000
@@ -279,25 +279,32 @@ void *zz_video_loop1(void *argc) {
         //当前祯显示的时间-上一祯的时间，计算出这一祯的延迟时间
         float delay = presentTime - decode_ctx->current_frame_time;
         
-        printf("delay = %f \n",delay);
+//        printf("delay = %f \n",delay);
         
-        float diff = interval - playdt;
+//        float diff = interval - playdt;
+        float diff  = decode_ctx->current_audio_time- decode_ctx->current_video_time;
         
-//        if (diff>=500) { //如果播放时间 大于 视频祯的时间 0.5秒，丢弃祯。
-//            zz_video_frame_free(pframe);
-//            printf("skip video frames... \n");
-//            continue;
-//        }
-        
-        if (diff>delay) {
-            delay *= 0.8;
+        if (diff>=0.2) { //音频比视频快0.2秒，丢弃祯
+            decode_ctx->current_frame_time = presentTime;
+            zz_video_frame_free(pframe);
+            printf("skip video frames... \n");
+            continue;
+        }else if (diff<=-0.4) {// 音频比视频慢0.4秒
+            delay = 2*delay;
         }
+        
         
         if (delay>=100) {
+            printf("delay > 200 ms  \n");
             delay = 100;
         }
+        if (delay<=0) {
+            delay = 0;
+        }
+
         
-//        printf("audiotime = %f   delay = %f  ",decode_ctx->current_audio_time,delay);
+        
+        printf("audiotime = %f  videotime = %f delay = %f  ",decode_ctx->current_audio_time,decode_ctx->current_video_time, delay);
         
 
 //        printf("curtime : %f  ,playdt: %f  diff = %f\n",interval,playdt,diff);
