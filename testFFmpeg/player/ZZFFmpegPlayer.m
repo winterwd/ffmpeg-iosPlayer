@@ -14,21 +14,22 @@
 extern void *ffmpeg_videooutput_init();
 extern void ffmpeg_videooutput_render(AVFrame *frame);
 @interface ZZFFmpegPlayer () <AudioPlayerDelegate>
+@property (nonatomic,strong) ZZAudioPlayer *audioPlayer;
 
 @end
 
 @implementation ZZFFmpegPlayer
 {
-    ZZAudioPlayer *audioPlayer;
+
     ZZVideoPlayerView *playView;
     zz_controller      *playerController;
 }
 
 
-static void player_statuse(void *userData,int status){
+static void player_statuse(void *userData,zz_status *status){
     
     ZZFFmpegPlayer *player = (__bridge ZZFFmpegPlayer *)userData;
-    if (status == 1) {
+    if (status->statusCode == ZZ_PLAY_STATUS_OPEN) {
         printf("打开成功了 \n");
 
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -40,9 +41,18 @@ static void player_statuse(void *userData,int status){
             
         });
         
-
        
+    }else if (status->statusCode == ZZ_PLAY_STATUS_PAUSED){
+        
+        [player.audioPlayer pause];
+        
+    }else if (status->statusCode == ZZ_PLAY_STATUS_RESUME){
+        
+        [player.audioPlayer play];
+        
     }
+    
+    free(status);
     
 }
 
@@ -80,8 +90,8 @@ void handleVideoCallback2(void *userData,void  *data){
         int ret = ffmpeg_decoder_open_file(playerDecoder, [path UTF8String]);
         if (ret>=0) {
             playerDecoder->decoded_video_data_callback = handleVideoCallback;
-            audioPlayer = [[ZZAudioPlayer alloc]initWithAudioSamplate:playerDecoder->samplerate numChannel:playerDecoder->nb_channel format:kAudioFormatFlagIsSignedInteger isInterleaved:YES];
-            audioPlayer.delegate = self;
+            self.audioPlayer = [[ZZAudioPlayer alloc]initWithAudioSamplate:playerDecoder->samplerate numChannel:playerDecoder->nb_channel format:kAudioFormatFlagIsSignedInteger isInterleaved:YES];
+            self.audioPlayer.delegate = self;
             
             
             ffmpeg_videooutput_init();
@@ -116,8 +126,8 @@ void handleVideoCallback2(void *userData,void  *data){
 
 - (void)open{
     //        playerDecoder->decoded_video_data_callback = handleVideoCallback;
-    audioPlayer = [[ZZAudioPlayer alloc]initWithAudioSamplate:playerController->audioInfo->samplerate numChannel:playerController->audioInfo->channels format:kAudioFormatFlagIsSignedInteger isInterleaved:YES];
-    audioPlayer.delegate = self;
+    self.audioPlayer = [[ZZAudioPlayer alloc]initWithAudioSamplate:playerController->audioInfo->samplerate numChannel:playerController->audioInfo->channels format:kAudioFormatFlagIsSignedInteger isInterleaved:YES];
+    self.audioPlayer.delegate = self;
     
     
     
@@ -206,7 +216,7 @@ void handleVideoCallback2(void *userData,void  *data){
 - (void)play
 {
 //    ffmpeg_decoder_star(playerDecoder);
-    [audioPlayer play];
+    [self.audioPlayer play];
 }
 
 
@@ -231,15 +241,21 @@ void handleVideoCallback2(void *userData,void  *data){
 
 - (void)pause
 {
-    
+    zz_controller_pause(playerController);
 }
+
+- (void)resume{
+    
+    zz_controller_resume(playerController);
+}
+
 - (void)stop
 {
-    
+    zz_controller_stop(playerController);
 }
-- (void)destroy
-{
-    
+
+- (void)destroy{
+
 }
 
 - (UIView *)playerView

@@ -23,6 +23,7 @@ typedef enum : NSUInteger {
 -(void)openFile:(NSString *)path;
 - (void)play;
 - (void)pause;
+- (void)resume;
 - (void)stop;
 - (void)destroy;
 - (UIView *)playerView;

@@ -83,6 +83,8 @@ typedef struct zz_decode_context_s{
     uint8_t     seek_flag; ///<跳转方向
     uint8_t     seek_req; ///<是否跳转,0非跳转，1跳转
     
+    uint8_t     paused; ///< 是否暂停播放
+    
 
     
     
@@ -101,4 +103,6 @@ float zz_decode_context_get_current_time(zz_decode_ctx *decode_ctx);
 int   zz_decode_context_seek_to_time(zz_decode_ctx *decode_ctx,float time);
 void * zz_decode_context_get_audio_buffer(zz_decode_ctx *decode_ctx);
 void * zz_decode_context_get_video_buffer(zz_decode_ctx *decode_ctx);
+void zz_decode_context_paused(zz_decode_ctx *decode_ctx);
+void zz_decode_context_resume(zz_decode_ctx *decode_ctx);
 #endif /* zz_decoder_h */

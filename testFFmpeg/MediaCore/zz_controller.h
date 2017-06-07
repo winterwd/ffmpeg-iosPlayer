@@ -14,16 +14,38 @@
 #include "zz_decoder.h"
 typedef enum {
     ZZ_EVENT_UNKNOW,
+    ZZ_EVENT_ERROR,
     ZZ_EVENT_DESTROY,
     ZZ_EVENT_OPEN,
+    ZZ_EVENT_PREPARED,
     ZZ_EVENT_CLOSE,
     ZZ_EVENT_PLAY,
     ZZ_EVENT_STOP,
+    ZZ_EVENT_PAUSED,
+    ZZ_EVENT_RESUME,
     ZZ_EVENT_RECEIVE_VIDEO,
     ZZ_EVENT_VIDEO_RENDER
 }ZZ_EVENT_TYPE;
 
-typedef void (statusCallback)(void *userData,int status);
+
+typedef enum {
+    ZZ_PLAY_STATUS_ERROR,
+    ZZ_PLAY_STATUS_OPEN,
+    ZZ_PLAY_STATUS_PAUSED,
+    ZZ_PLAY_STATUS_RESUME,
+    ZZ_PLAY_STATUS_PLAYING,
+    ZZ_PLAY_STATUS_BUFFERING,
+    
+}ZZ_PLAY_STATUS;
+
+typedef struct zz_status_s{
+    ZZ_PLAY_STATUS statusCode;
+    char           msg[256];
+}zz_status;
+
+
+
+typedef void (statusCallback)(void *userData,zz_status *status);
 typedef void (videoOutRenderCallback)(void *userData,void *frame);
 typedef struct zz_event_s {
     ZZ_EVENT_TYPE type;

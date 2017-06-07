@@ -8,7 +8,17 @@
 
 #include "zz_controller.h"
 
-
+static zz_status *zz_status_alloc(ZZ_PLAY_STATUS code,const char *msg){
+    zz_status *s = (zz_status *)malloc(sizeof(zz_status));
+    s->statusCode = code;
+    if (msg) {
+        strcpy(s->msg, msg);
+    }
+    return s;
+}
+static void zz_status_free(zz_status *status){
+    free(status);
+}
 
 
 static zz_event *zz_event_alloc(ZZ_EVENT_TYPE type,void *data) {
@@ -49,9 +59,17 @@ static void *zz_controller_EVENT_loop(void *argc) {
                 c->audioInfo->format = c->decodeCtx->audio_decoder->codec_ctx->sample_fmt;
                 
                 zz_decode_context_start(c->decodeCtx);
-                c->statusCallback(c->opaque,ret);
                 
-                c->status = 1;
+                if (ret>0) {
+                    
+                    c->statusCallback(c->opaque,zz_status_alloc(ZZ_PLAY_STATUS_OPEN, NULL));
+                }else{
+                    c->statusCallback(c->opaque,zz_status_alloc(ZZ_PLAY_STATUS_ERROR, "error: file open failure"));
+                }
+                
+                c->status = ZZ_PLAY_STATUS_OPEN;
+                
+                
             }else if (event->type == ZZ_EVENT_VIDEO_RENDER){
                 if (c->renderCallBack ) {
                 
@@ -62,6 +80,16 @@ static void *zz_controller_EVENT_loop(void *argc) {
                         free(frame);
                     }
                 }
+            }else if (event->type == ZZ_EVENT_PAUSED) {
+                
+                zz_decode_context_paused(c->decodeCtx);
+                
+                c->statusCallback(c->opaque,zz_status_alloc(ZZ_PLAY_STATUS_PAUSED, NULL));
+                
+            }else if (event->type == ZZ_EVENT_RESUME) {
+                
+                zz_decode_context_resume(c->decodeCtx);
+                c->statusCallback(c->opaque,zz_status_alloc(ZZ_PLAY_STATUS_RESUME, NULL));
             }
 
             free(event);
@@ -122,11 +150,13 @@ void zz_controller_play(zz_controller *controller) {
 }
 
 void zz_controller_pause(zz_controller *controller){
-    
+    zz_event *event = zz_event_alloc(ZZ_EVENT_PAUSED, NULL);
+    zz_queue_put(controller->eventQueue, event);
 }
 
 void zz_controller_resume(zz_controller *controller) {
-    
+    zz_event *event = zz_event_alloc(ZZ_EVENT_RESUME, NULL);
+    zz_queue_put(controller->eventQueue, event);
 }
 
 void zz_controller_stop(zz_controller *controller) {

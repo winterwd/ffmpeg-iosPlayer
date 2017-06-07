@@ -137,17 +137,19 @@ static void BufferCallback(void *inUserData,AudioQueueRef inAQ,
 - (void)play
 {
     //队列处理开始，此后系统开始自动调用回调(Callback)函数
-    AudioQueueFlush(queue);
     CheckError(AudioQueueStart(queue, nil), "AudioQueueStart error");
-//    AudioQueueReset(queue);
+
     
 }
+
 - (void)pause
 {
     AudioQueuePause(queue);
     
-    
 }
+
+
+
 - (void)stop
 {
     AudioQueueFlush(queue);
