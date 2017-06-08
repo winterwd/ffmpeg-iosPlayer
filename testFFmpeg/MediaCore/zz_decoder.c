@@ -12,7 +12,7 @@
 #define ZZ_VIDEO_QUEUE_SIZE 50
 
 #define ZZ_PACKET_QUEUE_SIZE 256
-#define ZZ_PACKET_QUEUE_CACHE_SIZE ZZ_PACKET_QUEUE_SIZE*0.75
+#define ZZ_PACKET_QUEUE_CACHE_SIZE (ZZ_PACKET_QUEUE_SIZE*0.75)
 
 int64_t zz_decode_context_get_audio_timestamp(zz_decode_ctx *ctx);
 int zz_decode_context_read_packet1(zz_decode_ctx *decode_ctx);
@@ -69,6 +69,10 @@ static zz_video_frame *convert_video_frame(zz_decoder *decoder,AVFrame *srcFrame
     AVFrame *frame = av_frame_alloc();
     frame->width = decoder->codec_ctx->width;
     frame->height = decoder->codec_ctx->height;
+//    int av_image_fill_arrays(uint8_t *dst_data[4], int dst_linesize[4],
+//                             const uint8_t *src,
+//                             enum AVPixelFormat pix_fmt, int width, int height, int align);
+
     avpicture_fill((AVPicture *)frame, data, AV_PIX_FMT_YUV420P, frame->width, frame->height);
 
     sws_scale(decoder->sws, (const uint8_t * const *)srcFrame->data, srcFrame->linesize, 0, decoder->codec_ctx->height, frame->data, frame->linesize);
@@ -94,7 +98,7 @@ static void zz_video_frame_free(void *frame) {
 static void zz_packet_free(void *data){
     AVPacket *packet = data;
     if (packet != NULL) {
-        av_free_packet(packet);
+        av_packet_unref(packet);
         packet = NULL;
     }
     
@@ -328,12 +332,12 @@ int zz_decode_context_read_packet(zz_decode_ctx *decode_ctx){
         }else if (packet->stream_index == decode_ctx->video_st_index){ //video packet
             zz_queue_put(decode_ctx->video_queue, packet);
         }else if (packet->stream_index == decode_ctx->subtitle_st_index){//subtitle packet
-            av_free_packet(packet);
+            av_packet_unref(packet);
         }
         
         
     }else{
-        av_free_packet(packet);
+        av_packet_unref(packet);
         if (decode_ctx->format_ctx->pb->error == 0) {
             usleep(10*1000);
         }
@@ -400,6 +404,7 @@ static zz_decoder * zz_decoder_alloc(AVFormatContext *fctx,enum AVMediaType type
         goto error_exit;
     }
     
+    
     decoder->swr = NULL;
     decoder->sws = NULL;
 
@@ -443,7 +448,7 @@ static zz_decoder * zz_decoder_alloc(AVFormatContext *fctx,enum AVMediaType type
                                               decoder->codec_ctx->pix_fmt,
                                               decoder->codec_ctx->width,
                                               decoder->codec_ctx->height,
-                                              PIX_FMT_YUV420P,
+                                              AV_PIX_FMT_YUV420P,
                                               SWS_BILINEAR, NULL, NULL, NULL);
 //            }
             decoder->buffer_queue = zz_queue_alloc(ZZ_VIDEO_QUEUE_SIZE, zz_video_frame_free);

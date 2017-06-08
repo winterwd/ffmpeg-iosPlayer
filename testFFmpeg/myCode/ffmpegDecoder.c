@@ -153,14 +153,14 @@ int ffmpeg_decoder_open_file(ffmpegDecoder *decoder,const char *path) {
     //video
     decoder->width = decoder->pVcodectx->width;
     decoder->height = decoder->pVcodectx->height;
-    decoder->video_buffer_size = avpicture_get_size(PIX_FMT_YUV420P, decoder->width, decoder->height);
+    decoder->video_buffer_size = avpicture_get_size(AV_PIX_FMT_YUV420P, decoder->width, decoder->height);
 
     for (int i=0; i<VIDEO_QUEUE_SIZE; i++) {
         AVFrame *rgbFrame = av_frame_alloc();
         uint8_t *videoBuffer = av_malloc(decoder->video_buffer_size);
         rgbFrame->width = decoder->width;
         rgbFrame->height = decoder->height;
-        avpicture_fill((AVPicture *)rgbFrame, videoBuffer, PIX_FMT_YUV420P, rgbFrame->width, rgbFrame->height);
+        avpicture_fill((AVPicture *)rgbFrame, videoBuffer, AV_PIX_FMT_YUV420P, rgbFrame->width, rgbFrame->height);
         decoder->vFrameQueue[i] = rgbFrame;
     }
     
@@ -171,7 +171,7 @@ int ffmpeg_decoder_open_file(ffmpegDecoder *decoder,const char *path) {
                                   decoder->pVcodectx->pix_fmt,
                                   decoder->width,
                                   decoder->height,
-                                  PIX_FMT_YUV420P,
+                                  AV_PIX_FMT_YUV420P,
                                   SWS_BILINEAR, NULL, NULL, NULL);
     
     return 1;
