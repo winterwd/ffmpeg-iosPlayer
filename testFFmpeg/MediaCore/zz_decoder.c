@@ -174,7 +174,7 @@ void *zz_video_loop(void *argc) {
     
     while (1) {
         
-        if (decode_ctx->current_audio_time == 0 || decode_ctx->paused == 1) {
+        if (decode_ctx->current_audio_time == 0  || decode_ctx->paused == 1) {
             usleep(100000);
             continue;
         }
@@ -247,41 +247,45 @@ void *zz_video_loop(void *argc) {
             decode_ctx->current_frame_time = presentTime;
         }
         
-
-        //        printf("ctime: %lld starttime:%lld frame_time:%f first_frame_time:%f    \ndt = %lld   playdt = %lld  \n",ctime,decode_ctx->start_time,presentTime,decode_ctx->first_frame_time,dt,playdt);
-        //ctime: 1496375016525682 starttime:1496375016525623 frame_time:0.187500 first_frame_time:0.000000
-        //        dt = 59   playdt = 0
-        
         //当前祯显示的时间-上一祯的时间，计算出这一祯的延迟时间
         float delay = presentTime - decode_ctx->current_frame_time;
-        
 
-        //当前音频时间 - 当前视频时间 
-        float diff  = decode_ctx->current_audio_time- decode_ctx->current_video_time;
+        //两祯之间的持续时间
+        float delta_t = FFMAX(0, delay)/1000.0;
+
+        //视频时间与音频时间的差值
+        float delat_d = decode_ctx->current_video_time - decode_ctx->current_audio_time;
         
-        if (diff>=0.2) { //音频比视频快0.2秒，丢弃祯
+        //延迟有效界限
+        float thresholdmax = 0.1;
+        
+        if (delat_d>=0) {
+            delay = FFMIN(delat_d, thresholdmax);
+        }
+        
+        if (delat_d < 0 && delat_d >= -1*delta_t) {
+            
+            delay = 0;
+            
+        }else if (delat_d < -1*delta_t){//延迟超过一个祯显示时间
+            
             decode_ctx->current_frame_time = presentTime;
             zz_video_frame_free(pframe);
+            printf("audiotime = %f  videotime = %f delay = %f  \n",decode_ctx->current_audio_time,decode_ctx->current_video_time, delay);
             printf("skip video frames... \n");
             continue;
-        }else if (diff<=-0.4) {// 音频比视频慢0.4秒
-            delay = 2*delay;
         }
         
         
-        if (delay>=100) {
-            printf("delay > 100 ms  \n");
-            delay = 100;
-        }
-        if (delay<=0) {
-            delay = 0;
-        }
+        
+//        printf("audiotime = %f  videotime = %f delay = %f  \n",decode_ctx->current_audio_time,decode_ctx->current_video_time, delay);
+        
 
-        printf("audiotime = %f  videotime = %f delay = %f  ",decode_ctx->current_audio_time,decode_ctx->current_video_time, delay);
         
+        //回调给外部祯渲染函数
         if (decode_ctx->videoCallBack) {
             
-            usleep(delay*1000);
+            usleep(delay*1000000);
             
             decode_ctx->videoCallBack(decode_ctx->opaque,pframe);
             
@@ -298,6 +302,10 @@ void *zz_decode_loop(void *argc){
     zz_decode_ctx *decode_ctx = argc;
     printf(" decode thread start \n ");
     while (1) {
+        
+        if (decode_ctx->abort_req == 1) {
+            break;
+        }
         
         pthread_mutex_lock(&decode_ctx->decode_lock);
         while (zz_queue_size(decode_ctx->audio_queue)>=ZZ_PACKET_QUEUE_CACHE_SIZE || decode_ctx->seek_req == 1) {
@@ -371,6 +379,10 @@ void zz_decoder_free(zz_decoder *decoder) {
         free(decoder);
     }
 }
+
+//static double frame_duration(zz_decode_ctx *ctx){
+//    //is->max_frame_duration = (ic->iformat->flags & AVFMT_TS_DISCONT) ? 10.0 : 3600.0;
+//}
 
 static zz_decoder * zz_decoder_alloc(AVFormatContext *fctx,enum AVMediaType type){
     
