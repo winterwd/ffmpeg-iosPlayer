@@ -33,7 +33,7 @@ typedef struct zz_decoder_s {
     zz_convert_frame_func   *convert_func;
      AVFrame    *frame;  ///<保存单次解码后的frame
     
-    
+    int audio_buf_size;
 }zz_decoder;
 
 
@@ -54,8 +54,10 @@ typedef struct zz_decode_context_s{
     int         buffer_size;
     int         decode_status;
     uint8_t     abort_req; ///<处理中断请求
-    pthread_t   decodeThreadId;  //解码线程
+    pthread_t   readPacketThreadId;  //读包线程
     pthread_t   videoThreadId;    //视频线程
+    pthread_t   videoDecodeThreadId; //视频解码线程
+    pthread_t   audioDecodeThreadId;  //音频解码线程
     pthread_mutex_t decode_lock;
     pthread_cond_t  decode_cond;
     

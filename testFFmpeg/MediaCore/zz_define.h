@@ -31,7 +31,7 @@ typedef struct zz_decode_frame_s {
 }zz_decode_frame;
 
 typedef struct zz_audio_frame_s{
-    int channels,samplerate,byte_per_second,nbsamples,size;
+    int channels,samplerate,byte_per_frame,nbsamples,size,isplanar;
     enum AVSampleFormat format;
     uint8_t *data;
 //    uint8_t **extentData;

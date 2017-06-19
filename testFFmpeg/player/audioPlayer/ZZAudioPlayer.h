@@ -38,6 +38,8 @@
 //定义队列为实例属性
 @property AudioQueueRef queue;
 @property (nonatomic,assign) id<AudioPlayerDelegate> delegate;
+
+- (id)initWithAudioFormat:(AudioStreamBasicDescription )format;
 //播放方法定义
 - (id)initWithAudioSamplate:(int )samplerate
                  numChannel:(int )channel

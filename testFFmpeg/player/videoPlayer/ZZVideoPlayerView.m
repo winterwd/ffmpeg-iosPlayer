@@ -256,6 +256,7 @@ void ffmpeg_videooutput_render(AVFrame *frame)
 {
 //    [s_renderLock lock];
    
+    pthread_setname_np("video_render_thread");
     if (render== NULL) {
 //        [s_renderLock unlock];
         return;

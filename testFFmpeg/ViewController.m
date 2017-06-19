@@ -21,7 +21,7 @@
 @property (strong, nonatomic) IBOutlet UILabel *durationLb;
 @property (strong, nonatomic) IBOutlet UILabel *curLb;
 
-@property (strong, nonatomic) IBOutlet UISlider *slierView;
+@property (strong, nonatomic) IBOutlet UISlider *slierView; 
 @end
 
 @implementation ViewController
@@ -43,6 +43,7 @@
     }];
     
     [[NSRunLoop currentRunLoop]addTimer:timer forMode:NSRunLoopCommonModes];
+    
     
     
 
@@ -116,18 +117,24 @@
 - (void)testFFmpeg
 {
 
-//    NSString *infileName = @"/Users/xiaowoniu/Documents/一些素材/test.flv";
+    NSArray *videourls = @[@"/Users/smart/Documents/temp/douyu/2002312ryyDsNuoe.flv",
+                          @"/Users/smart/Documents/temp/douyu/output.mp4",
+                           @"/Users/smart/Documents/temp/qianxun/qianxun1.flv",
+                           @"http://bobolive.nosdn.127.net/bobo_1477399116609_39807374.mp4",
+                           @"rtmp://flvbohetec1.live.126.net/live/1b609928586a448ab77ba1d958ca7a0c.flv?netease=flvbohetec1.live.126.net?t=1497871394285"];
+//    NSString *infileName = @"/Users/smart/Documents/temp/douyu/output.mp4";
+//    NSString *infileName =;
 //    NSString *infileName = @"/Users/smart/Documents/temp/test.flv";
     //Users/xiaowoniu/Downloads/13.mp4
     //Users/smart/Desktop/未命名文件夹/output.mp4
     
-    NSString *infileName = @"/Users/smart/Documents/temp/qianxun/qianxun1.flv";
+//    NSString *infileName = @"/Users/smart/Documents/temp/qianxun/qianxun1.flv";
 //    NSString *infileName = @"http://www.bobo.com/proxy_extapi/redirect/video/10149346";
 //    NSString *outFileName = @"/Users/smart/Documents/temp/test.pcm";
 //    NSString *infileName = @"http://bobolive.nosdn.127.net/bobo_1477399116609_39807374.mp4";
     
     player = [[ZZFFmpegPlayer alloc]init];
-    [player openFile:infileName];
+    [player openFile:videourls[0]];
     __weak ZZFFmpegPlayer *weakPlayer = player;
     __weak ViewController *weakSelf = self;
     [player setPlayStateCallBack:^(FFmpegPlayerStatus status) {

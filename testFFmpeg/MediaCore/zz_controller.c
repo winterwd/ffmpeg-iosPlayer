@@ -40,6 +40,7 @@ static void *zz_controller_EVENT_loop(void *argc) {
     
     zz_controller *c = (zz_controller *)argc;
     zz_event *event = NULL;
+    pthread_setname_np("evnet_loop_thread");
     while(1) {
         event = zz_queue_pop_block(c->eventQueue,1);
         if (event!=NULL) { //处理命令
@@ -57,7 +58,8 @@ static void *zz_controller_EVENT_loop(void *argc) {
                 c->audioInfo->channels = c->decodeCtx->audio_decoder->codec_ctx->channels;
                 c->audioInfo->samplerate = c->decodeCtx->audio_decoder->codec_ctx->sample_rate;
                 c->audioInfo->format = c->decodeCtx->audio_decoder->codec_ctx->sample_fmt;
-                
+                c->audioInfo->byte_per_frame = av_get_bytes_per_sample(c->audioInfo->format);
+                c->audioInfo->isplanar = av_get_planar_sample_fmt(c->audioInfo->format);
                 zz_decode_context_start(c->decodeCtx);
                 
                 if (ret>0) {

@@ -10,7 +10,7 @@
 
 @implementation ZZAudioPlayer
 
-static UInt32 gBufferSizeBytes=8192;//It muse be pow(2,x)
+static UInt32 gBufferSizeBytes=8192*4;//It muse be pow(2,x)
 
 @synthesize queue;
 
@@ -56,6 +56,25 @@ static void BufferCallback(void *inUserData,AudioQueueRef inAQ,
         [self.delegate audioQueueOutputWithQueue:audioQueue queueBuffer:audioQueueBuffer];
     }
     
+}
+
+
+- (id)initWithAudioFormat:(AudioStreamBasicDescription )format
+{
+    if (!(self=[super init])) return nil;
+    dataFormat = format;
+    //创建播放用的音频队列
+    
+    
+    CheckError(AudioQueueNewOutput(&dataFormat, BufferCallback, (__bridge void * _Nullable)(self),
+                                   nil, nil, 0, &queue), "AudioQueueNewOutput error");
+    [self audioPrepare];
+    
+    Float32 gain=1.0;
+    //设置音量
+    AudioQueueSetParameter(queue, kAudioQueueParam_Volume, gain);
+    
+    return self;
 }
 
 

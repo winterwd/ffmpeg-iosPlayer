@@ -25,12 +25,15 @@ typedef struct zz_queue {
     zz_node_free_callback *callbackFunc;
     int size;
     int capacity;
+    int cacheSize;
 }zz_queue;
 
 
 zz_queue * zz_queue_alloc(int capacity,zz_node_free_callback *callback);
+zz_queue * zz_queue_alloc_cachesize(int capacity,int cachesize,zz_node_free_callback *callback);
 
 void zz_queue_put(zz_queue *queue,void *data);
+void zz_queue_put_block(zz_queue *queue,void *data,int block);
 void * zz_queue_pop(zz_queue *quque);
 void * zz_queue_peek(zz_queue *queue);
 void * zz_queue_pop_block(zz_queue *queue,int block);
