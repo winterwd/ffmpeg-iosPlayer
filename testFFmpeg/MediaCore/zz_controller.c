@@ -60,6 +60,12 @@ static void *zz_controller_EVENT_loop(void *argc) {
                 c->audioInfo->format = c->decodeCtx->audio_decoder->codec_ctx->sample_fmt;
                 c->audioInfo->byte_per_frame = av_get_bytes_per_sample(c->audioInfo->format);
                 c->audioInfo->isplanar = av_get_planar_sample_fmt(c->audioInfo->format);
+                
+                
+                c->videoInfo->width = c->decodeCtx->video_decoder->codec_ctx->width;
+                c->videoInfo->height = c->decodeCtx->video_decoder->codec_ctx->height;
+                c->videoInfo->fps = av_q2d(c->decodeCtx->video_decoder->codec_ctx->framerate);
+                
                 zz_decode_context_start(c->decodeCtx);
                 
                 if (ret>0) {

@@ -18,7 +18,7 @@ extern void ffmpeg_videooutput_render(AVFrame *frame);
 
 @end
 
-AudioStreamBasicDescription convertAvSampleFmtToAudioDesc(zz_controller *c);
+
 
 @implementation ZZFFmpegPlayer
 {
@@ -28,6 +28,7 @@ AudioStreamBasicDescription convertAvSampleFmtToAudioDesc(zz_controller *c);
 }
 
 
+void convert(zz_controller *c,AudioStreamBasicDescription *mFormat);
 static void player_statuse(void *userData,zz_status *status){
     
     ZZFFmpegPlayer *player = (__bridge ZZFFmpegPlayer *)userData;
@@ -127,21 +128,26 @@ void handleVideoCallback2(void *userData,void  *data){
 }
 
 - (void)open{
-    //        playerDecoder->decoded_video_data_callback = handleVideoCallback;
     
-    AudioFormatFlags format = kLinearPCMFormatFlagIsSignedInteger;
-    if (playerController->audioInfo->format == AV_SAMPLE_FMT_S16) {
-        format = kAudioFormatFlagIsSignedInteger;
-    }
-    self.audioPlayer = [[ZZAudioPlayer alloc]initWithAudioFormat:convertAvSampleFmtToAudioDesc(playerController)];
+    
+    self.audioPlayer = [[ZZAudioPlayer alloc]initWithAudioSamplate:playerController->audioInfo->samplerate numChannel:playerController->audioInfo->channels format:kAudioFormatFlagIsSignedInteger isInterleaved:YES];
     self.audioPlayer.delegate = self;
     
     
     
     ffmpeg_videooutput_init();
-    CGFloat height = [UIScreen mainScreen].bounds.size.width*0.75;
-//    playView = [[ZZVideoPlayerView alloc]initWithFrame:CGRectMake(0, 200, [UIScreen mainScreen].bounds.size.width, height)];
-    playView = [[ZZVideoPlayerView alloc]initWithFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, [UIScreen mainScreen].bounds.size.height)];
+    int width = playerController->videoInfo->width;
+    int height = playerController->videoInfo->height;
+    
+    float rate = width/(float)height;
+    
+    CGFloat viewHeight = [UIScreen mainScreen].bounds.size.width/rate;
+    
+    
+    printf("width = %d height = %d  viewheight = %f\n",width,height,viewHeight);
+    
+    playView = [[ZZVideoPlayerView alloc]initWithFrame:CGRectMake(0, 20, [UIScreen mainScreen].bounds.size.width, viewHeight)];
+
     
     
     
@@ -152,6 +158,7 @@ void handleVideoCallback2(void *userData,void  *data){
 {
 
     uint32_t len = audioQueueBuffer->mAudioDataBytesCapacity;
+    
     int buffer_index = 0;
     while (len>0) {
         zz_audio_frame *frame = zz_decode_context_get_audio_buffer(playerController->decodeCtx);
@@ -230,99 +237,101 @@ void handleVideoCallback2(void *userData,void  *data){
     return playView;
 }
 
-AudioStreamBasicDescription convertAvSampleFmtToAudioDesc(zz_controller *c)
+void convert(zz_controller *c,AudioStreamBasicDescription *mFormat)
 {
     // Generate PCM output
     
     AVCodecContext *codecContext = c->decodeCtx->audio_decoder->codec_ctx;
     
-    AudioStreamBasicDescription mFormat;
-    mFormat.mFormatID			= kAudioFormatLinearPCM;
     
-    mFormat.mSampleRate			= codecContext->sample_rate;
-    mFormat.mChannelsPerFrame	= (UInt32)codecContext->channels;
-//    AV_SAMPLE_FMT_S16
-    //codecContext->sample_fmt
+    mFormat->mFormatID			= kAudioFormatLinearPCM;
+    mFormat->mReserved			= 0;
+    mFormat->mSampleRate			= codecContext->sample_rate;
+    mFormat->mChannelsPerFrame	= (UInt32)codecContext->channels;
+    
+    
     switch(codecContext->sample_fmt) {
             
         case AV_SAMPLE_FMT_U8P:
-            mFormat.mFormatFlags		= kAudioFormatFlagIsPacked | kAudioFormatFlagIsNonInterleaved;
-            mFormat.mBitsPerChannel		= 8;
-            mFormat.mBytesPerPacket		= (mFormat.mBitsPerChannel / 8);
-            mFormat.mFramesPerPacket	= 1;
-            mFormat.mBytesPerFrame		= mFormat.mBytesPerPacket * mFormat.mFramesPerPacket;
+            mFormat->mFormatFlags		= kAudioFormatFlagIsPacked | kAudioFormatFlagIsNonInterleaved;
+            mFormat->mBitsPerChannel		= 8;
+            mFormat->mBytesPerPacket		= (mFormat->mBitsPerChannel / 8);
+            mFormat->mFramesPerPacket	= 1;
+            mFormat->mBytesPerFrame		= mFormat->mBytesPerPacket * mFormat->mFramesPerPacket;
             break;
             
         case AV_SAMPLE_FMT_U8:
-            mFormat.mFormatFlags		= kAudioFormatFlagIsPacked;
-            mFormat.mBitsPerChannel		= 8;
-            mFormat.mBytesPerPacket		= (mFormat.mBitsPerChannel / 8) * mFormat.mChannelsPerFrame;
-            mFormat.mFramesPerPacket	= 1;
-            mFormat.mBytesPerFrame		= mFormat.mBytesPerPacket * mFormat.mFramesPerPacket;
+            mFormat->mFormatFlags		= kAudioFormatFlagIsPacked;
+            mFormat->mBitsPerChannel		= 8;
+            mFormat->mBytesPerPacket		= (mFormat->mBitsPerChannel / 8) * mFormat->mChannelsPerFrame;
+            mFormat->mFramesPerPacket	= 1;
+            mFormat->mBytesPerFrame		= mFormat->mBytesPerPacket * mFormat->mFramesPerPacket;
             break;
             
         case AV_SAMPLE_FMT_S16P:
-            mFormat.mFormatFlags		= kAudioFormatFlagIsSignedInteger | kAudioFormatFlagIsPacked | kAudioFormatFlagIsNonInterleaved;
-            mFormat.mBitsPerChannel		= 16;
-            mFormat.mBytesPerPacket		= (mFormat.mBitsPerChannel / 8);
-            mFormat.mFramesPerPacket	= 1;
-            mFormat.mBytesPerFrame		= mFormat.mBytesPerPacket * mFormat.mFramesPerPacket;
+            mFormat->mFormatFlags		= kAudioFormatFlagIsSignedInteger | kAudioFormatFlagIsPacked | kAudioFormatFlagIsNonInterleaved;
+            mFormat->mBitsPerChannel		= 16;
+            mFormat->mBytesPerPacket		= (mFormat->mBitsPerChannel / 8);
+            mFormat->mFramesPerPacket	= 1;
+            mFormat->mBytesPerFrame		= mFormat->mBytesPerPacket * mFormat->mFramesPerPacket;
             break;
             
         case AV_SAMPLE_FMT_S16:
-            mFormat.mFormatFlags		= kAudioFormatFlagIsSignedInteger | kAudioFormatFlagIsPacked;
-            mFormat.mBitsPerChannel		= 16;
-            mFormat.mBytesPerPacket		= (mFormat.mBitsPerChannel / 8) * mFormat.mChannelsPerFrame;
-            mFormat.mFramesPerPacket	= 1;
-            mFormat.mBytesPerFrame		= mFormat.mBytesPerPacket * mFormat.mFramesPerPacket;
+            mFormat->mFormatFlags		= kAudioFormatFlagIsSignedInteger | kAudioFormatFlagIsPacked;
+            mFormat->mBitsPerChannel		= 16;
+            mFormat->mBytesPerPacket		= (mFormat->mBitsPerChannel / 8) * mFormat->mChannelsPerFrame;
+            mFormat->mFramesPerPacket	= 1;
+            mFormat->mBytesPerFrame		= mFormat->mBytesPerPacket * mFormat->mFramesPerPacket;
             break;
             
         case AV_SAMPLE_FMT_S32P:
-            mFormat.mFormatFlags		= kAudioFormatFlagIsSignedInteger | kAudioFormatFlagIsPacked | kAudioFormatFlagIsNonInterleaved;
-            mFormat.mBitsPerChannel		= 32;
-            mFormat.mBytesPerPacket		= (mFormat.mBitsPerChannel / 8);
-            mFormat.mFramesPerPacket	= 1;
-            mFormat.mBytesPerFrame		= mFormat.mBytesPerPacket * mFormat.mFramesPerPacket;
+            mFormat->mFormatFlags		= kAudioFormatFlagIsSignedInteger | kAudioFormatFlagIsPacked | kAudioFormatFlagIsNonInterleaved;
+            mFormat->mBitsPerChannel		= 32;
+            mFormat->mBytesPerPacket		= (mFormat->mBitsPerChannel / 8);
+            mFormat->mFramesPerPacket	= 1;
+            mFormat->mBytesPerFrame		= mFormat->mBytesPerPacket * mFormat->mFramesPerPacket;
             break;
             
         case AV_SAMPLE_FMT_S32:
-            mFormat.mFormatFlags		= kAudioFormatFlagIsSignedInteger | kAudioFormatFlagIsPacked;
-            mFormat.mBitsPerChannel		= 32;
-            mFormat.mBytesPerPacket		= (mFormat.mBitsPerChannel / 8) * mFormat.mChannelsPerFrame;
-            mFormat.mFramesPerPacket	= 1;
-            mFormat.mBytesPerFrame		= mFormat.mBytesPerPacket * mFormat.mFramesPerPacket;
+            mFormat->mFormatFlags		= kAudioFormatFlagIsSignedInteger | kAudioFormatFlagIsPacked;
+            mFormat->mBitsPerChannel		= 32;
+            mFormat->mBytesPerPacket		= (mFormat->mBitsPerChannel / 8) * mFormat->mChannelsPerFrame;
+            mFormat->mFramesPerPacket	= 1;
+            mFormat->mBytesPerFrame		= mFormat->mBytesPerPacket * mFormat->mFramesPerPacket;
             break;
             
         case AV_SAMPLE_FMT_FLTP:
-            mFormat.mFormatFlags		= kAudioFormatFlagsNativeFloatPacked | kAudioFormatFlagIsNonInterleaved;
-            mFormat.mBitsPerChannel		= 8 * sizeof(float);
-            mFormat.mBytesPerPacket		= (mFormat.mBitsPerChannel / 8);
-            mFormat.mFramesPerPacket	= 1;
-            mFormat.mBytesPerFrame		= mFormat.mBytesPerPacket * mFormat.mFramesPerPacket;
+            mFormat->mFormatFlags		= kAudioFormatFlagsNativeFloatPacked | kAudioFormatFlagIsNonInterleaved;
+            mFormat->mBitsPerChannel		= 8 * sizeof(float);
+            mFormat->mBytesPerPacket		= (mFormat->mBitsPerChannel / 8);
+            mFormat->mFramesPerPacket	= 1;
+            mFormat->mBytesPerFrame		= mFormat->mBytesPerPacket * mFormat->mFramesPerPacket;
+            
+
             break;
             
         case AV_SAMPLE_FMT_FLT:
-            mFormat.mFormatFlags		= kAudioFormatFlagsNativeFloatPacked;
-            mFormat.mBitsPerChannel		= 8 * sizeof(float);
-            mFormat.mBytesPerPacket		= (mFormat.mBitsPerChannel / 8) * mFormat.mChannelsPerFrame;
-            mFormat.mFramesPerPacket	= 1;
-            mFormat.mBytesPerFrame		= mFormat.mBytesPerPacket * mFormat.mFramesPerPacket;
+            mFormat->mFormatFlags		= kAudioFormatFlagsNativeFloatPacked;
+            mFormat->mBitsPerChannel		= 8 * sizeof(float);
+            mFormat->mBytesPerPacket		= (mFormat->mBitsPerChannel / 8) * mFormat->mChannelsPerFrame;
+            mFormat->mFramesPerPacket	= 1;
+            mFormat->mBytesPerFrame		= mFormat->mBytesPerPacket * mFormat->mFramesPerPacket;
             break;
             
         case AV_SAMPLE_FMT_DBLP:
-            mFormat.mFormatFlags		= kAudioFormatFlagsNativeFloatPacked | kAudioFormatFlagIsNonInterleaved;
-            mFormat.mBitsPerChannel		= 8 * sizeof(double);
-            mFormat.mBytesPerPacket		= (mFormat.mBitsPerChannel / 8);
-            mFormat.mFramesPerPacket	= 1;
-            mFormat.mBytesPerFrame		= mFormat.mBytesPerPacket * mFormat.mFramesPerPacket;
+            mFormat->mFormatFlags		= kAudioFormatFlagsNativeFloatPacked | kAudioFormatFlagIsNonInterleaved;
+            mFormat->mBitsPerChannel		= 8 * sizeof(double);
+            mFormat->mBytesPerPacket		= (mFormat->mBitsPerChannel / 8);
+            mFormat->mFramesPerPacket	= 1;
+            mFormat->mBytesPerFrame		= mFormat->mBytesPerPacket * mFormat->mFramesPerPacket;
             break;
             
         case AV_SAMPLE_FMT_DBL:
-            mFormat.mFormatFlags		= kAudioFormatFlagsNativeFloatPacked;
-            mFormat.mBitsPerChannel		= 8 * sizeof(double);
-            mFormat.mBytesPerPacket		= (mFormat.mBitsPerChannel / 8) * mFormat.mChannelsPerFrame;
-            mFormat.mFramesPerPacket	= 1;
-            mFormat.mBytesPerFrame		= mFormat.mBytesPerPacket * mFormat.mFramesPerPacket;
+            mFormat->mFormatFlags		= kAudioFormatFlagsNativeFloatPacked;
+            mFormat->mBitsPerChannel		= 8 * sizeof(double);
+            mFormat->mBytesPerPacket		= (mFormat->mBitsPerChannel / 8) * mFormat->mChannelsPerFrame;
+            mFormat->mFramesPerPacket	= 1;
+            mFormat->mBytesPerFrame		= mFormat->mBytesPerPacket * mFormat->mFramesPerPacket;
             break;
             
         default:
@@ -330,9 +339,11 @@ AudioStreamBasicDescription convertAvSampleFmtToAudioDesc(zz_controller *c)
             break;
     }
     
-    mFormat.mReserved			= 0;
+
     
-    return mFormat;
+
+    
+    
 
 }
 @end

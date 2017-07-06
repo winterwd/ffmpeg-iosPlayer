@@ -33,25 +33,25 @@ int64_t zz_gettime(void)
 static zz_audio_frame *convert_audio_frame(zz_decoder *decoder,AVFrame *srcFrame){
  
     zz_audio_frame *audioFrame = (zz_audio_frame *)malloc(sizeof(zz_audio_frame));
-//    AV_SAMPLE_FMT_S16
-    int buffer_size = av_samples_get_buffer_size(srcFrame->linesize, decoder->codec_ctx->channels, srcFrame->nb_samples, decoder->codec_ctx->sample_fmt, 1);
     
-    uint8_t *data = malloc(4096);
-//    if (decoder->swr != NULL) {
-//        int ret = 0;
-//        ret = swr_convert(
-//                      decoder->swr,
-//                      (uint8_t **)&data,
-//                      srcFrame->nb_samples,
-//                      (const uint8_t **) srcFrame->data,
-//                      srcFrame->nb_samples);
-//    }
-//    
-//    else{
-        memcpy(data, srcFrame->data[0], 4096);
-//    }
+    int buffer_size = av_samples_get_buffer_size(NULL, decoder->codec_ctx->channels, srcFrame->nb_samples, AV_SAMPLE_FMT_S16, 1);
+    
+    uint8_t *data = malloc(buffer_size);
+    if (decoder->swr != NULL) {
+        int ret = 0;
+        ret = swr_convert(
+                      decoder->swr,
+                      (uint8_t **)&data,
+                      srcFrame->nb_samples,
+                      (const uint8_t **) srcFrame->data,
+                      srcFrame->nb_samples);
+    }
+    
+    else{
+        memcpy(data, srcFrame->data[0], buffer_size);
+    }
     audioFrame->data = data;
-    audioFrame->size = 4096;
+    audioFrame->size = buffer_size;
     
     return audioFrame;
 }
@@ -85,7 +85,7 @@ static zz_video_frame *convert_video_frame(zz_decoder *decoder,AVFrame *srcFrame
     sws_scale(decoder->sws, (const uint8_t * const *)srcFrame->data, srcFrame->linesize, 0, decoder->codec_ctx->height, frame->data, frame->linesize);
     videoFrame->frame = frame;
     videoFrame->timebase = av_frame_get_best_effort_timestamp(srcFrame);
-//    printf("videoframe->timebase =  %lld  \n",videoFrame->timebase);
+
     videoFrame->size = buffersize;
     return videoFrame;
 }
@@ -389,13 +389,7 @@ void *zz_video_loop(void *argc) {
             printf("skip video frames... \n");
             continue;
         }
-        
-        
-        
 
-        
-
-        
         //回调给外部祯渲染函数
         if (decode_ctx->videoCallBack) {
             
@@ -438,7 +432,7 @@ void *zz_read_loop(void *argc){
         }
     }
     
-    printf(" decode thread end \n ");
+    printf(" readpacket  thread end \n ");
     return NULL;
 }
 
@@ -544,29 +538,17 @@ static zz_decoder * zz_decoder_alloc(AVFormatContext *fctx,enum AVMediaType type
                 SwrContext *swrctx = swr_alloc();
                 
                 
-//                int64_t out_ch_layout = AV_CH_LAYOUT_STEREO;
-//                enum AVSampleFormat out_sample_fmt = AV_SAMPLE_FMT_S16;
-//                int out_sample_rate = decoder->codec_ctx->sample_rate;
-                
-                int64_t out_ch_layout = AV_CH_LAYOUT_STEREO;
+
                 enum AVSampleFormat out_sample_fmt = AV_SAMPLE_FMT_S16;
-                int out_sample_rate = 44100;
-                int out_nb_samples = decoder->codec_ctx->frame_size;
-                int out_nb_channels = av_get_channel_layout_nb_channels(out_ch_layout);
-                
-                
-                decoder->audio_buf_size = av_samples_get_buffer_size(NULL, out_nb_channels, out_nb_samples, out_sample_fmt, 1);
-                
-                printf("decoder->audio buffer size : %d \n",decoder->audio_buf_size);
+                int out_sample_rate = decoder->codec_ctx->sample_rate;
                 
                 int64_t in_ch_layout = av_get_default_channel_layout(decoder->codec_ctx->channels);
                 enum AVSampleFormat in_sample_fmt = decoder->codec_ctx->sample_fmt;
                 int in_sample_rate = decoder->codec_ctx->sample_rate;
                 
-                swr_alloc_set_opts(swrctx, out_ch_layout, out_sample_fmt, out_sample_rate, in_ch_layout, in_sample_fmt, in_sample_rate, 0, NULL);
+                swr_alloc_set_opts(swrctx, in_ch_layout, out_sample_fmt, out_sample_rate, in_ch_layout, in_sample_fmt, in_sample_rate, 0, NULL);
                 
                 swr_init(swrctx);
-                
                 decoder->swr = swrctx;
             }
 
@@ -580,7 +562,7 @@ static zz_decoder * zz_decoder_alloc(AVFormatContext *fctx,enum AVMediaType type
         case AVMEDIA_TYPE_VIDEO:
             decoder->convert_func = (void *)convert_video_frame;
             decoder->decode_func = avcodec_decode_video2;
-//            if (decoder->codec_ctx->pix_fmt != AV_PIX_FMT_YUV420P) {
+
                 decoder->sws = sws_getContext(decoder->codec_ctx->width,
                                               decoder->codec_ctx->height,
                                               decoder->codec_ctx->pix_fmt,
@@ -588,7 +570,6 @@ static zz_decoder * zz_decoder_alloc(AVFormatContext *fctx,enum AVMediaType type
                                               decoder->codec_ctx->height,
                                               AV_PIX_FMT_YUV420P,
                                               SWS_BILINEAR, NULL, NULL, NULL);
-//            }
             decoder->buffer_queue = zz_queue_alloc_cachesize(ZZ_VIDEO_QUEUE_SIZE,ZZ_VIDEO_QUEUE_CACHESIZE, zz_video_frame_free);
             decoder->frame = av_frame_alloc();
             break;
@@ -660,6 +641,7 @@ void zz_decode_context_destroy(zz_decode_ctx *decode_ctx){
     }
     if (decode_ctx->subtitle_decoder) {
         zz_decoder_free(decode_ctx->subtitle_decoder);
+        
     }
     
     
@@ -837,27 +819,13 @@ void zz_decode_context_resume(zz_decode_ctx *decode_ctx) {
 
 void * zz_decode_context_get_audio_buffer(zz_decode_ctx *decode_ctx){
     
-
-    
-//    AVPacket *packet = zz_queue_pop_block(decode_ctx->audio_queue,1);
-//    zz_decode_packet(decode_ctx, packet);
     zz_audio_frame *pframe = zz_queue_pop(decode_ctx->audio_decoder->buffer_queue);
     if (pframe == NULL) {
         return NULL;
     }
     
-//    float audiotime = 0;
-    
     decode_ctx->current_audio_time = pframe->timebase *decode_ctx->audio_timebase;
     
-//    pthread_mutex_lock(&decode_ctx->decode_lock);
-//   
-//    if (zz_queue_size(decode_ctx->audio_decoder->buffer_queue) < ZZ_PACKET_QUEUE_CACHE_SIZE) {
-////        printf("audio buffer decrease to %f items, start read...\n",ZZ_PACKET_QUEUE_CACHE_SIZE);
-//        pthread_cond_signal(&decode_ctx->decode_cond);
-//
-//    }
-//    pthread_mutex_unlock(&decode_ctx->decode_lock);
     return (void *)pframe;
 }
 

@@ -59,14 +59,14 @@ static void BufferCallback(void *inUserData,AudioQueueRef inAQ,
 }
 
 
-- (id)initWithAudioFormat:(AudioStreamBasicDescription )format
+- (id)initWithAudioFormat:(AudioStreamBasicDescription *)format
 {
     if (!(self=[super init])) return nil;
-    dataFormat = format;
+//    audioFormat = format;
     //创建播放用的音频队列
     
     
-    CheckError(AudioQueueNewOutput(&dataFormat, BufferCallback, (__bridge void * _Nullable)(self),
+    CheckError(AudioQueueNewOutput(format, BufferCallback, (__bridge void * _Nullable)(self),
                                    nil, nil, 0, &queue), "AudioQueueNewOutput error");
     [self audioPrepare];
     
@@ -115,6 +115,7 @@ static void BufferCallback(void *inUserData,AudioQueueRef inAQ,
     }
     
 }
+
 
 - (void)setAudioDataFormatWithSmapleRate:(double)samplerate
                               numChannel:(int)channels

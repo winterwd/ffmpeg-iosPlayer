@@ -18,6 +18,7 @@
 
     //音频流描述对象
     AudioStreamBasicDescription dataFormat;
+    AudioStreamBasicDescription *audioFormat;
     //音频队列
     AudioQueueRef queue;
     SInt64 packetIndex;
@@ -39,7 +40,7 @@
 @property AudioQueueRef queue;
 @property (nonatomic,assign) id<AudioPlayerDelegate> delegate;
 
-- (id)initWithAudioFormat:(AudioStreamBasicDescription )format;
+- (id)initWithAudioFormat:(AudioStreamBasicDescription *)format;
 //播放方法定义
 - (id)initWithAudioSamplate:(int )samplerate
                  numChannel:(int )channel

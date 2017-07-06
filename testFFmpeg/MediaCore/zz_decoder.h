@@ -32,8 +32,6 @@ typedef struct zz_decoder_s {
     zz_decode_func          *decode_func;
     zz_convert_frame_func   *convert_func;
      AVFrame    *frame;  ///<保存单次解码后的frame
-    
-    int audio_buf_size;
 }zz_decoder;
 
 
@@ -42,15 +40,8 @@ typedef struct zz_decode_context_s{
     int         video_st_index,audio_st_index,subtitle_st_index;
     zz_decoder *video_decoder,*audio_decoder,*subtitle_decoder;
     
-    
-
     int         audioBytePerSecond;
-    
     int         audioFrameBufferSize;
-    
-
-
-    
     int         buffer_size;
     int         decode_status;
     uint8_t     abort_req; ///<处理中断请求
@@ -84,11 +75,7 @@ typedef struct zz_decode_context_s{
     int64_t     seek_pos; ///<跳转位置
     uint8_t     seek_flag; ///<跳转方向
     uint8_t     seek_req; ///<是否跳转,0非跳转，1跳转
-    
     uint8_t     paused; ///< 是否暂停播放
-    
-
-    
     
 }zz_decode_ctx;
 
