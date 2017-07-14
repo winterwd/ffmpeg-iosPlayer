@@ -146,7 +146,7 @@ void handleVideoCallback2(void *userData,void  *data){
     
     printf("width = %d height = %d  viewheight = %f\n",width,height,viewHeight);
     
-    playView = [[ZZVideoPlayerView alloc]initWithFrame:CGRectMake(0, 20, [UIScreen mainScreen].bounds.size.width, viewHeight)];
+    playView = [[ZZVideoPlayerView alloc]initWithFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, viewHeight)];
 
     
     
@@ -232,7 +232,7 @@ void handleVideoCallback2(void *userData,void  *data){
     if (!playView) {
         
         CGFloat height = [UIScreen mainScreen].bounds.size.width*0.75;
-        playView = [[ZZVideoPlayerView alloc]initWithFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, [UIScreen mainScreen].bounds.size.height)];
+        playView = [[ZZVideoPlayerView alloc]initWithFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, height)];
     }
     return playView;
 }

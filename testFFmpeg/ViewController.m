@@ -118,6 +118,7 @@
 {
 
     NSArray *videourls = @[@"/Users/smart/Documents/temp/douyu/2002312ryyDsNuoe.flv",
+                           @"/Users/smart/Documents/temp/douyu/qiaoer.flv",
                            @"/Users/smart/Documents/temp/douyu/1/fx_hifi_269530607.flv",
                           @"/Users/smart/Documents/temp/douyu/output.mp4",
                            @"/Users/smart/Documents/temp/qianxun/qianxun1.flv",

@@ -210,6 +210,8 @@ static void *zz_audio_decode_thread(void *argc) {
             
             zz_packet_free(packet);
             
+        }else{
+            usleep(1000*10);
         }
         
         
@@ -302,12 +304,11 @@ void *zz_video_loop(void *argc) {
         if (decode_ctx->seek_req == 1) {
             decode_ctx->start_time = 0;
             int stream_index = AVMEDIA_TYPE_UNKNOWN;
-            if (decode_ctx->video_decoder) {
+            if (decode_ctx->video_decoder) { //如果有视频流，按视频的时间来seek
                 stream_index = decode_ctx->video_st_index;
                 
                 decode_ctx->seek_pos = av_rescale_q(decode_ctx->seek_pos, AV_TIME_BASE_Q, decode_ctx->video_decoder->stream->time_base);
-            }
-            if (decode_ctx->audio_decoder){
+            }else if (decode_ctx->audio_decoder){ //如果无视频流，按音频的时间来seek
                 if (stream_index == AVMEDIA_TYPE_UNKNOWN) {
                     stream_index =  decode_ctx->audio_st_index;
                     decode_ctx->seek_pos = av_rescale_q(decode_ctx->seek_pos, AV_TIME_BASE_Q, decode_ctx->audio_decoder->stream->time_base);
@@ -866,7 +867,17 @@ float zz_decode_context_get_current_time(zz_decode_ctx *decode_ctx){
 }
 
 
-
+float zz_decode_context_get_cached_time(zz_decode_ctx *decode_ctx){
+    
+    if (decode_ctx->audio_st_index != AVMEDIA_TYPE_UNKNOWN){
+        
+        
+        return decode_ctx->current_audio_time;
+    }else{
+        return  0.0;
+    }
+    
+}
 
 
 

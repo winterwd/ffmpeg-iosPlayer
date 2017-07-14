@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1F5B96D066C9BF332BBC5536 /* libPods-testFFmpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 284DC644CE65B3A4AC324810 /* libPods-testFFmpeg.a */; };
 		2A1E62C91ED4276E00BFC0AD /* zz_controller.c in Sources */ = {isa = PBXBuildFile; fileRef = 2A1E62C71ED4276E00BFC0AD /* zz_controller.c */; };
 		2A1E62CC1ED4284400BFC0AD /* zz_decoder.c in Sources */ = {isa = PBXBuildFile; fileRef = 2A1E62CA1ED4284400BFC0AD /* zz_decoder.c */; };
 		2A1E62CF1ED43B8B00BFC0AD /* zz_buffer.c in Sources */ = {isa = PBXBuildFile; fileRef = 2A1E62CD1ED43B8B00BFC0AD /* zz_buffer.c */; };
@@ -27,6 +28,8 @@
 		2A40031D1EE9615F003BA23E /* librtmp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2A40030F1EE9615F003BA23E /* librtmp.a */; };
 		2A40031E1EE9615F003BA23E /* libssl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2A4003101EE9615F003BA23E /* libssl.a */; };
 		2A4003261EE96593003BA23E /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2A4003251EE96593003BA23E /* CoreMedia.framework */; };
+		2A5703221F15C7D600095467 /* ZZPlayerControlView.m in Sources */ = {isa = PBXBuildFile; fileRef = 2A5703211F15C7D600095467 /* ZZPlayerControlView.m */; };
+		2AFCEBE81F18796200768B30 /* ZZPlayer.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2AFCEBE71F18796200768B30 /* ZZPlayer.xcassets */; };
 		7B074A4B1D7720A0006A7CF7 /* ZZAudioPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 7B074A451D7720A0006A7CF7 /* ZZAudioPlayer.m */; };
 		7B074A4C1D7720A0006A7CF7 /* ZZVideoPlayerView.m in Sources */ = {isa = PBXBuildFile; fileRef = 7B074A481D7720A0006A7CF7 /* ZZVideoPlayerView.m */; };
 		7B074A501D7722D9006A7CF7 /* ZZFFmpegPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 7B074A4F1D7722D9006A7CF7 /* ZZFFmpegPlayer.m */; };
@@ -69,6 +72,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		284DC644CE65B3A4AC324810 /* libPods-testFFmpeg.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-testFFmpeg.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		2A1E62C71ED4276E00BFC0AD /* zz_controller.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = zz_controller.c; sourceTree = "<group>"; };
 		2A1E62C81ED4276E00BFC0AD /* zz_controller.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = zz_controller.h; sourceTree = "<group>"; };
 		2A1E62CA1ED4284400BFC0AD /* zz_decoder.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = zz_decoder.c; sourceTree = "<group>"; };
@@ -296,6 +300,9 @@
 		2A4003231EE963DD003BA23E /* genericStds.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = genericStds.h; sourceTree = "<group>"; };
 		2A4003241EE963DD003BA23E /* machine_type.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = machine_type.h; sourceTree = "<group>"; };
 		2A4003251EE96593003BA23E /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMedia.framework; path = System/Library/Frameworks/CoreMedia.framework; sourceTree = SDKROOT; };
+		2A5703201F15C7D600095467 /* ZZPlayerControlView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZZPlayerControlView.h; sourceTree = "<group>"; };
+		2A5703211F15C7D600095467 /* ZZPlayerControlView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZZPlayerControlView.m; sourceTree = "<group>"; };
+		2AFCEBE71F18796200768B30 /* ZZPlayer.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = ZZPlayer.xcassets; sourceTree = "<group>"; };
 		7B074A441D7720A0006A7CF7 /* ZZAudioPlayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZZAudioPlayer.h; sourceTree = "<group>"; };
 		7B074A451D7720A0006A7CF7 /* ZZAudioPlayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZZAudioPlayer.m; sourceTree = "<group>"; };
 		7B074A471D7720A0006A7CF7 /* ZZVideoPlayerView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZZVideoPlayerView.h; sourceTree = "<group>"; };
@@ -339,6 +346,8 @@
 		7BE22D3A1D7096C10007B9EF /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
 		7BE22D421D72CA0B0007B9EF /* pthreadTest.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = pthreadTest.c; sourceTree = "<group>"; };
 		7BE22D431D72CA0B0007B9EF /* pthreadTest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pthreadTest.h; sourceTree = "<group>"; };
+		BE79322AAB098F31030E939E /* Pods-testFFmpeg.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-testFFmpeg.debug.xcconfig"; path = "Pods/Target Support Files/Pods-testFFmpeg/Pods-testFFmpeg.debug.xcconfig"; sourceTree = "<group>"; };
+		D17D2955A83D5916DF3FB9AA /* Pods-testFFmpeg.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-testFFmpeg.release.xcconfig"; path = "Pods/Target Support Files/Pods-testFFmpeg/Pods-testFFmpeg.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -373,6 +382,7 @@
 				2A4003161EE9615F003BA23E /* libavfilter.a in Frameworks */,
 				7B46310518D1F09D009C5B3A /* Foundation.framework in Frameworks */,
 				2A4003141EE9615F003BA23E /* libavcodec.a in Frameworks */,
+				1F5B96D066C9BF332BBC5536 /* libPods-testFFmpeg.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -839,6 +849,7 @@
 				7B46312918D1F09D009C5B3A /* testFFmpegTests */,
 				7B46310318D1F09D009C5B3A /* Frameworks */,
 				7B46310218D1F09D009C5B3A /* Products */,
+				E942911460BDCF8B5977684A /* Pods */,
 			);
 			sourceTree = "<group>";
 		};
@@ -871,6 +882,7 @@
 				7B46310618D1F09D009C5B3A /* CoreGraphics.framework */,
 				7B46310818D1F09D009C5B3A /* UIKit.framework */,
 				7B46312318D1F09D009C5B3A /* XCTest.framework */,
+				284DC644CE65B3A4AC324810 /* libPods-testFFmpeg.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -889,6 +901,7 @@
 				7B4631A618D1F8C4009C5B3A /* Main.storyboard */,
 				7B46311C18D1F09D009C5B3A /* Images.xcassets */,
 				7B46310B18D1F09D009C5B3A /* Supporting Files */,
+				2AFCEBE71F18796200768B30 /* ZZPlayer.xcassets */,
 			);
 			path = testFFmpeg;
 			sourceTree = "<group>";
@@ -933,8 +946,19 @@
 				7B224E9E1D6F498F00DD0BDD /* ffmpegDecoder.h */,
 				7BE22D311D70819B0007B9EF /* ffmpegPacketQueue.c */,
 				7BE22D321D70819B0007B9EF /* ffmpegPacketQueue.h */,
+				2A5703201F15C7D600095467 /* ZZPlayerControlView.h */,
+				2A5703211F15C7D600095467 /* ZZPlayerControlView.m */,
 			);
 			path = myCode;
+			sourceTree = "<group>";
+		};
+		E942911460BDCF8B5977684A /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				BE79322AAB098F31030E939E /* Pods-testFFmpeg.debug.xcconfig */,
+				D17D2955A83D5916DF3FB9AA /* Pods-testFFmpeg.release.xcconfig */,
+			);
+			name = Pods;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -944,9 +968,12 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 7B46313318D1F09D009C5B3A /* Build configuration list for PBXNativeTarget "testFFmpeg" */;
 			buildPhases = (
+				1F73415854EE89A1856079F7 /* [CP] Check Pods Manifest.lock */,
 				7B4630FD18D1F09D009C5B3A /* Sources */,
 				7B4630FE18D1F09D009C5B3A /* Frameworks */,
 				7B4630FF18D1F09D009C5B3A /* Resources */,
+				A9A94E991F87AF07D3C8050C /* [CP] Embed Pods Frameworks */,
+				DC8D232C636F51CB468950CE /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -981,7 +1008,7 @@
 		7B4630F918D1F09D009C5B3A /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0500;
+				LastUpgradeCheck = 0830;
 				ORGANIZATIONNAME = XiaoWoNiu2014;
 				TargetAttributes = {
 					7B46310018D1F09D009C5B3A = {
@@ -1018,6 +1045,7 @@
 			files = (
 				7B4631A818D1F8C4009C5B3A /* Main.storyboard in Resources */,
 				7B46311D18D1F09D009C5B3A /* Images.xcassets in Resources */,
+				2AFCEBE81F18796200768B30 /* ZZPlayer.xcassets in Resources */,
 				7B46310F18D1F09D009C5B3A /* InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1032,6 +1060,54 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		1F73415854EE89A1856079F7 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_ROOT}/../Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n";
+			showEnvVarsInLog = 0;
+		};
+		A9A94E991F87AF07D3C8050C /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-testFFmpeg/Pods-testFFmpeg-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		DC8D232C636F51CB468950CE /* [CP] Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "[CP] Copy Pods Resources";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-testFFmpeg/Pods-testFFmpeg-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		7B4630FD18D1F09D009C5B3A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -1043,6 +1119,7 @@
 				7B4631AC18D213DA009C5B3A /* DecodeMovie.m in Sources */,
 				7B46311B18D1F09D009C5B3A /* ViewController.m in Sources */,
 				2A1E62D21ED457B900BFC0AD /* zz_queue.c in Sources */,
+				2A5703221F15C7D600095467 /* ZZPlayerControlView.m in Sources */,
 				2A1E62CF1ED43B8B00BFC0AD /* zz_buffer.c in Sources */,
 				7B46311518D1F09D009C5B3A /* AppDelegate.m in Sources */,
 				7BE22D331D70819B0007B9EF /* ffmpegPacketQueue.c in Sources */,
@@ -1113,19 +1190,26 @@
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
@@ -1135,7 +1219,6 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LIBRARY_SEARCH_PATHS = "\"$(SRCROOT)/testFFmpeg/FFmpeg-iOS-2.7.7/lib\"";
 				ONLY_ACTIVE_ARCH = YES;
-				OTHER_LDFLAGS = "-ObjC";
 				SDKROOT = iphoneos;
 				VALID_ARCHS = "arm64 armv7 armv7s";
 			};
@@ -1154,13 +1237,19 @@
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = YES;
 				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
@@ -1169,7 +1258,6 @@
 				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/testFFmpeg/FFmpeg-iOS-2.7.7/include\"";
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LIBRARY_SEARCH_PATHS = "\"$(SRCROOT)/testFFmpeg/FFmpeg-iOS-2.7.7/lib\"";
-				OTHER_LDFLAGS = "-ObjC";
 				SDKROOT = iphoneos;
 				VALIDATE_PRODUCT = YES;
 				VALID_ARCHS = "arm64 armv7 armv7s";
@@ -1178,6 +1266,7 @@
 		};
 		7B46313418D1F09D009C5B3A /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = BE79322AAB098F31030E939E /* Pods-testFFmpeg.debug.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -1192,6 +1281,7 @@
 					"\"$(SRCROOT)/testFFmpeg/ffmpeglib/FFmpeg-iOS/include\"",
 					"\"$(SRCROOT)/testFFmpeg/ffmpeglib/fdk-aac-ios/include\"",
 					"\"$(SRCROOT)/testFFmpeg/ffmpeglib/fat-x264/include\"",
+					"$(inherited)",
 				);
 				INFOPLIST_FILE = "testFFmpeg/testFFmpeg-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
@@ -1200,8 +1290,14 @@
 					"$(PROJECT_DIR)/testFFmpeg/ffmpeglib/fdk-aac-ios/lib",
 					"$(PROJECT_DIR)/testFFmpeg/ffmpeglib/FFmpeg-iOS/lib",
 					"$(PROJECT_DIR)/testFFmpeg/ffmpeglib/librtmp/lib",
+					"$(inherited)",
 				);
-				OTHER_LDFLAGS = "-ObjC";
+				OTHER_LDFLAGS = (
+					"-ObjC",
+					"$(inherited)",
+				);
+				PODS_ROOT = "$(inherited)";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.xiaowoniu.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				VALID_ARCHS = "arm64 armv7 i386";
 				WRAPPER_EXTENSION = app;
@@ -1210,6 +1306,7 @@
 		};
 		7B46313518D1F09D009C5B3A /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = D17D2955A83D5916DF3FB9AA /* Pods-testFFmpeg.release.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -1224,6 +1321,7 @@
 					"\"$(SRCROOT)/testFFmpeg/ffmpeglib/FFmpeg-iOS/include\"",
 					"\"$(SRCROOT)/testFFmpeg/ffmpeglib/fdk-aac-ios/include\"",
 					"\"$(SRCROOT)/testFFmpeg/ffmpeglib/fat-x264/include\"",
+					"$(inherited)",
 				);
 				INFOPLIST_FILE = "testFFmpeg/testFFmpeg-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
@@ -1232,8 +1330,14 @@
 					"$(PROJECT_DIR)/testFFmpeg/ffmpeglib/fdk-aac-ios/lib",
 					"$(PROJECT_DIR)/testFFmpeg/ffmpeglib/FFmpeg-iOS/lib",
 					"$(PROJECT_DIR)/testFFmpeg/ffmpeglib/librtmp/lib",
+					"$(inherited)",
 				);
-				OTHER_LDFLAGS = "-ObjC";
+				OTHER_LDFLAGS = (
+					"-ObjC",
+					"$(inherited)",
+				);
+				PODS_ROOT = "$(inherited)";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.xiaowoniu.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				VALID_ARCHS = "arm64 armv7 i386";
 				WRAPPER_EXTENSION = app;
@@ -1256,6 +1360,7 @@
 					"$(inherited)",
 				);
 				INFOPLIST_FILE = "testFFmpegTests/testFFmpegTests-Info.plist";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.xiaowoniu.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TEST_HOST = "$(BUNDLE_LOADER)";
 				WRAPPER_EXTENSION = xctest;
@@ -1274,6 +1379,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "testFFmpeg/testFFmpeg-Prefix.pch";
 				INFOPLIST_FILE = "testFFmpegTests/testFFmpegTests-Info.plist";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.xiaowoniu.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TEST_HOST = "$(BUNDLE_LOADER)";
 				WRAPPER_EXTENSION = xctest;
